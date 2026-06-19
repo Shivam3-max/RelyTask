@@ -1,0 +1,279 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── ROLES & PERMISSIONS ────────────────────────────────────────────────────
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  isSystem    Boolean      @default(false)
+  permissions Permission[]
+  users       User[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Permission {
+  id     String @id @default(cuid())
+  module String
+  action String
+  roles  Role[]
+}
+
+// ─── USERS ──────────────────────────────────────────────────────────────────
+
+model User {
+  id          String    @id @default(cuid())
+  name        String
+  email       String    @unique
+  password    String
+  phone       String?
+  avatar      String?
+  roleId      String
+  role        Role      @relation(fields: [roleId], references: [id])
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  assignedTasks Task[]         @relation("TaskAssignee")
+  createdTasks  Task[]         @relation("TaskCreator")
+  comments      Comment[]
+  notifications Notification[]
+  clientProfile Client?
+  activityLogs  ActivityLog[]
+}
+
+// ─── CLIENTS ────────────────────────────────────────────────────────────────
+
+model Client {
+  id          String      @id @default(cuid())
+  name        String
+  companyName String?
+  email       String
+  phone       String?
+  logo        String?
+  userId      String?     @unique
+  user        User?       @relation(fields: [userId], references: [id])
+  adAccounts  AdAccount[]
+  projects    Project[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// ─── PROJECTS ───────────────────────────────────────────────────────────────
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  clientId    String
+  client      Client        @relation(fields: [clientId], references: [id])
+  status      ProjectStatus @default(ACTIVE)
+  startDate   DateTime?
+  dueDate     DateTime?
+  tasks       Task[]
+  files       File[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+// ─── TASKS ──────────────────────────────────────────────────────────────────
+
+model Task {
+  id           String       @id @default(cuid())
+  title        String
+  description  String?
+  projectId    String?
+  project      Project?     @relation(fields: [projectId], references: [id])
+  assigneeId   String?
+  assignee     User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creatorId    String
+  creator      User         @relation("TaskCreator", fields: [creatorId], references: [id])
+  category     TaskCategory
+  priority     Priority     @default(MEDIUM)
+  status       TaskStatus   @default(TODO)
+  dueDate      DateTime?
+  completedAt  DateTime?
+  recurrence   String?      // NONE | DAILY | WEEKLY | MONTHLY
+  revisionNo   Int          @default(0)
+  maxRevisions Int          @default(3)
+  files        File[]
+  comments     Comment[]
+  subtasks     Subtask[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+enum TaskCategory {
+  VIDEO_EDITING
+  GRAPHIC_DESIGN
+  ADS_MANAGEMENT
+  SHOOT
+  CONTENT_WRITING
+  STRATEGY
+  REPORTING
+  OTHER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  CLIENT_APPROVAL
+  REVISION
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Subtask {
+  id     String  @id @default(cuid())
+  title  String
+  done   Boolean @default(false)
+  taskId String
+  task   Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+// ─── FILES ──────────────────────────────────────────────────────────────────
+
+model File {
+  id         String   @id @default(cuid())
+  name       String
+  url        String
+  size       Int
+  mimeType   String
+  taskId     String?
+  task       Task?    @relation(fields: [taskId], references: [id])
+  projectId  String?
+  project    Project? @relation(fields: [projectId], references: [id])
+  uploadedBy String
+  createdAt  DateTime @default(now())
+}
+
+// ─── COMMENTS ───────────────────────────────────────────────────────────────
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+// ─── ADS ────────────────────────────────────────────────────────────────────
+
+model AdAccount {
+  id          String     @id @default(cuid())
+  platform    AdPlatform
+  accountId   String
+  accountName String
+  accessToken String
+  clientId    String
+  client      Client     @relation(fields: [clientId], references: [id])
+  metrics     AdMetric[]
+  createdAt   DateTime   @default(now())
+}
+
+enum AdPlatform {
+  META
+  GOOGLE
+  YOUTUBE
+}
+
+model AdMetric {
+  id          String    @id @default(cuid())
+  adAccountId String
+  adAccount   AdAccount @relation(fields: [adAccountId], references: [id])
+  date        DateTime
+  spend       Float
+  impressions Int
+  clicks      Int
+  conversions Int
+  roas        Float?
+  ctr         Float?
+  cpc         Float?
+  rawData     Json?
+  createdAt   DateTime  @default(now())
+}
+
+// ─── NOTIFICATIONS ──────────────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  title     String
+  body      String
+  type      NotificationType
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime         @default(now())
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_DUE
+  TASK_OVERDUE
+  TASK_COMPLETED
+  REVISION_REQUESTED
+  CLIENT_APPROVED
+  AD_ALERT
+  MENTION
+  SYSTEM
+}
+
+// ─── ACTIVITY LOG ───────────────────────────────────────────────────────────
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+// ─── SOP TEMPLATES ──────────────────────────────────────────────────────────
+
+model SopTemplate {
+  id        String       @id @default(cuid())
+  name      String
+  category  TaskCategory
+  steps     SopStep[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model SopStep {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  order       Int
+  templateId  String
+  template    SopTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+}

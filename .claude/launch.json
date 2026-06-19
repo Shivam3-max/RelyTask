@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "relytask",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-l", "4351", "."],
-      "port": 4351
+      "name": "relytask-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
     }
   ]
 }
