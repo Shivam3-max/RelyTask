@@ -38,7 +38,7 @@ export default function PortalProjectsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">My Projects</h1>
+        <h1 className="text-[22px] font-semibold tracking-tight text-white">My Projects</h1>
         <p className="text-sm text-gray-400 mt-1">{projects.length} project{projects.length !== 1 ? "s" : ""} in your account</p>
       </div>
 

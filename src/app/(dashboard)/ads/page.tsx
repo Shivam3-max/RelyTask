@@ -7,6 +7,8 @@ import { TrendingUp, DollarSign, MousePointer, Eye, Target, Plus, ChevronLeft, C
 import { useToast } from "@/components/ui/Toast";
 import { PLATFORM_COLOR } from "@/lib/constants";
 import { usePageTitle } from "@/lib/hooks";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
 
 const PAGE_SIZE = 15;
 
@@ -88,27 +90,20 @@ export default function AdsPage() {
   const avgRoas = metrics.filter((m) => m.roas).reduce((a, m) => a + (m.roas ?? 0), 0) / (metrics.filter((m) => m.roas).length || 1);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {metricsError && (
-        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
-          Failed to load ad metrics — try refreshing.
+        <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          Couldn&apos;t load ad metrics. Try refreshing.
         </p>
       )}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Ad Performance</h1>
-          <p className="text-sm text-gray-400 mt-1">Live metrics across all client accounts</p>
-        </div>
-        <button
-          onClick={() => setAdding(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" /> Add Entry
-        </button>
-      </div>
+      <PageHeader title="Ad performance" description="Live metrics across all client accounts">
+        <Button size="sm" onClick={() => setAdding(true)}>
+          <Plus className="h-3.5 w-3.5" /> Add entry
+        </Button>
+      </PageHeader>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <MetricCard label="Total Spend" value={`₹${totals.spend.toLocaleString()}`} icon={<DollarSign className="w-4 h-4 text-yellow-400" />} />
         <MetricCard label="Impressions" value={totals.impressions.toLocaleString()} icon={<Eye className="w-4 h-4 text-blue-400" />} />
         <MetricCard label="Clicks" value={totals.clicks.toLocaleString()} icon={<MousePointer className="w-4 h-4 text-indigo-400" />} />
@@ -123,15 +118,12 @@ export default function AdsPage() {
         </div>
         {metrics.length === 0 ? (
           <div className="px-5 py-12 text-center">
-            <TrendingUp className="w-8 h-8 text-gray-700 mx-auto mb-3" aria-hidden="true" />
+            <TrendingUp className="mx-auto mb-3 h-8 w-8 text-gray-700" aria-hidden="true" />
             <p className="text-sm text-gray-500">No ad data yet</p>
-            <p className="text-xs text-gray-600 mt-1">Click "Add Entry" to manually log metrics</p>
-            <button
-              onClick={() => setAdding(true)}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              <Plus className="w-4 h-4" /> Add First Entry
-            </button>
+            <p className="mt-1 text-xs text-gray-600">Log metrics manually to start tracking performance.</p>
+            <Button size="sm" onClick={() => setAdding(true)} className="mt-4">
+              <Plus className="h-3.5 w-3.5" /> Add first entry
+            </Button>
           </div>
         ) : (
           <table className="w-full min-w-[700px] text-sm">

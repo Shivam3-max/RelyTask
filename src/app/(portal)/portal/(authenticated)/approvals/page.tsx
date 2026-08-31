@@ -64,7 +64,7 @@ export default function ApprovalsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Approvals</h1>
+        <h1 className="text-[22px] font-semibold tracking-tight text-white">Approvals</h1>
         <p className="text-sm text-gray-400 mt-1">Review and approve deliverables from your agency</p>
       </div>
 

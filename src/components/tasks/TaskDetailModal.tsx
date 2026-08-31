@@ -13,6 +13,8 @@ import { useToast } from "@/components/ui/Toast";
 import { formatDate, isOverdue, cn } from "@/lib/utils";
 import { CATEGORY_LABEL } from "@/lib/constants";
 import { hasPermission } from "@/lib/permissions";
+import { Badge } from "@/components/ui/Badge";
+import { inputClass } from "@/components/ui/Input";
 
 const STATUS_OPTIONS = [
   { value: "TODO", label: "To Do", color: "bg-gray-700 text-gray-300" },
@@ -179,17 +181,15 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
   const late = task.dueDate && isOverdue(task.dueDate) && task.status !== "DONE";
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" role="dialog" aria-modal="true" aria-label={task.title}>
-      <div ref={dialogRef} tabIndex={-1} className="bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[95vh] flex flex-col focus:outline-none">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={task.title}>
+      <div ref={dialogRef} tabIndex={-1} className="flex max-h-[95vh] w-full flex-col rounded-t-2xl border border-gray-800 bg-gray-900 shadow-2xl focus:outline-none sm:max-w-2xl sm:rounded-2xl">
         {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b border-gray-800 shrink-0">
-          <div className="flex-1 min-w-0 pr-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">
-                {CATEGORY_LABEL[task.category]}
-              </span>
+        <div className="flex shrink-0 items-start justify-between border-b border-gray-800 p-5">
+          <div className="min-w-0 flex-1 pr-4">
+            <div className="mb-1.5 flex items-center gap-2">
+              <Badge>{CATEGORY_LABEL[task.category]}</Badge>
               {task.project && (
-                <span className="text-xs text-indigo-400">{task.project.client.name} · {task.project.name}</span>
+                <span className="truncate text-xs text-gray-500">{task.project.client.name} · {task.project.name}</span>
               )}
             </div>
             {editingTitle ? (
@@ -296,7 +296,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
               <select
                 value={task.priority}
                 onChange={(e) => updateTask.mutate({ priority: e.target.value })}
-                className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white"
+                className="rounded-lg border border-gray-800 bg-gray-900 px-3 py-1.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
               >
                 {PRIORITY_OPTIONS.map((p) => (
                   <option key={p.value} value={p.value}>{p.label}</option>
@@ -307,7 +307,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
               <select
                 value={task.recurrence || ""}
                 onChange={(e) => updateTask.mutate({ recurrence: e.target.value || null })}
-                className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white"
+                className="rounded-lg border border-gray-800 bg-gray-900 px-3 py-1.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
               >
                 {RECURRENCE_OPTIONS.map((r) => (
                   <option key={r.value} value={r.value}>{r.label}</option>
@@ -512,11 +512,11 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
                 <div className="space-y-3 mb-4">
                   {task.comments.map((c) => (
                     <div key={c.id} className="flex gap-3">
-                      <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-0.5">
+                      <div className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gray-800 text-[10px] font-semibold text-gray-200">
                         {c.author.name.charAt(0)}
                       </div>
-                      <div className="flex-1 bg-gray-800 rounded-xl px-3 py-2">
-                        <div className="flex items-center gap-2 mb-1">
+                      <div className="flex-1 rounded-lg border border-gray-800 bg-gray-950/50 px-3 py-2">
+                        <div className="mb-1 flex items-center gap-2">
                           <span className="text-xs font-medium text-white">{c.author.name}</span>
                           <span className="text-[10px] text-gray-500">
                             {new Date(c.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
@@ -543,16 +543,16 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
               onChange={(e) => setComment(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && comment.trim()) { e.preventDefault(); addComment.mutate(); } }}
               placeholder="Add a comment… (Enter to send)"
-              className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={cn(inputClass, "flex-1")}
             />
             <button
               type="button"
               onClick={() => comment.trim() && addComment.mutate()}
               disabled={!comment.trim() || addComment.isPending}
               aria-label="Send comment"
-              className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-lg transition-colors"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-indigo-600 text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
             >
-              <Send className="w-4 h-4" aria-hidden="true" />
+              <Send className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>

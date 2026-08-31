@@ -62,10 +62,10 @@ export default async function CapacityPage() {
   const withOverdue = users.filter((u) => u.overdue.length > 0).length;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Team Capacity</h1>
-        <p className="text-sm text-gray-400 mt-1">See who&apos;s free, busy, or overloaded right now</p>
+    <div className="space-y-5">
+      <div className="mb-1">
+        <h1 className="text-[22px] font-semibold tracking-tight text-white">Team capacity</h1>
+        <p className="mt-1 text-sm text-gray-500">Who&apos;s free, busy, or overloaded right now</p>
       </div>
 
       {/* Alerts */}

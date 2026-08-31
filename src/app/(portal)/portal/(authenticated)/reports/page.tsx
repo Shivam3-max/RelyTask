@@ -27,7 +27,7 @@ export default function PortalReportsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Reports</h1>
+        <h1 className="text-[22px] font-semibold tracking-tight text-white">Reports</h1>
         <p className="text-sm text-gray-400 mt-1">Monthly summary of your project progress</p>
       </div>
 

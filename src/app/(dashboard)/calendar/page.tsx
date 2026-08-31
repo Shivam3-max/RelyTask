@@ -6,7 +6,7 @@ import { usePageTitle } from "@/lib/hooks";
 import axios from "axios";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CATEGORY_LABEL, PRIORITY_DOT } from "@/lib/constants";
+import { CATEGORY_LABEL } from "@/lib/constants";
 
 type Task = {
   id: string;
@@ -91,18 +91,18 @@ export default function CalendarPage() {
     day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {isError && (
-        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
-          Failed to load tasks — try refreshing the page.
+        <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-400">
+          Couldn&apos;t load tasks. Try refreshing.
         </p>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-white">Content Calendar</h1>
-          <p className="text-sm text-gray-400 mt-1">Task deadlines across all projects</p>
+          <h1 className="text-[22px] font-semibold tracking-tight text-white">Calendar</h1>
+          <p className="mt-1 text-sm text-gray-500">Task deadlines across all projects</p>
         </div>
-        <div className="flex items-center gap-1 bg-gray-900 border border-gray-800 rounded-xl px-1 py-1">
+        <div className="flex items-center gap-1 rounded-lg border border-gray-800 bg-gray-900 p-1">
           <button type="button" onClick={prevMonth} aria-label="Previous month" className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
             <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </button>

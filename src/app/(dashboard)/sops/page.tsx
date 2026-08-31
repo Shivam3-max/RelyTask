@@ -7,6 +7,12 @@ import { Plus, Trash2, BookOpen, ChevronDown, ChevronRight } from "lucide-react"
 import { useToast } from "@/components/ui/Toast";
 import { CATEGORY_LABEL_FULL } from "@/lib/constants";
 import { usePageTitle } from "@/lib/hooks";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { inputClass } from "@/components/ui/Input";
 
 type SopStep = { id?: string; title: string; description?: string; order: number };
 type SopTemplate = {
@@ -67,39 +73,26 @@ export default function SopsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-white">SOP Builder</h1>
-          <p className="text-sm text-gray-400 mt-1">Standard operating procedures for every service type</p>
-        </div>
-        <button
-          onClick={() => setCreating(true)}
-          className="flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
+    <div className="space-y-5">
+      <PageHeader title="SOP builder" description="Standard operating procedures for every service type">
+        <Button size="sm" onClick={() => setCreating(true)}>
+          <Plus className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">New SOP</span>
-        </button>
-      </div>
+        </Button>
+      </PageHeader>
 
       {/* Info banner */}
-      <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-5 py-4">
-        <div className="flex items-start gap-3">
-          <BookOpen className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-indigo-300">How SOPs work</p>
-            <p className="text-xs text-indigo-400/70 mt-0.5">
-              When a task is created with a matching category, its SOP checklist auto-loads as subtasks.
-              Your team follows the steps — nothing gets missed.
-            </p>
-          </div>
-        </div>
+      <div className="flex items-start gap-3 rounded-xl border border-gray-800 bg-gray-900 px-4 py-3">
+        <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" aria-hidden="true" />
+        <p className="text-xs text-gray-400">
+          When a task is created with a matching category, its SOP checklist auto-loads as subtasks — so nothing gets missed.
+        </p>
       </div>
 
-      {isLoading && <p className="text-gray-500 text-sm">Loading...</p>}
+      {isLoading && <p className="text-sm text-gray-500">Loading…</p>}
       {isError && (
-        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
-          Failed to load SOPs — try refreshing.
+        <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-400">
+          Couldn&apos;t load SOPs. Try refreshing.
         </p>
       )}
 
@@ -150,98 +143,75 @@ export default function SopsPage() {
         ))}
 
         {sops.length === 0 && !isLoading && (
-          <div className="text-center py-12 bg-gray-900 border border-gray-800 rounded-xl">
-            <BookOpen className="w-8 h-8 text-gray-700 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">No SOPs yet</p>
-            <p className="text-xs text-gray-600 mt-1">Create your first SOP to standardize your workflows</p>
-          </div>
+          <EmptyState
+            icon={BookOpen}
+            title="No SOPs yet"
+            description="Create your first SOP to standardize a workflow."
+            action="New SOP"
+            onAction={() => setCreating(true)}
+          />
         )}
       </div>
 
-      {/* Create SOP Modal */}
       {creating && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="create-sop-title">
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-800">
-              <h2 id="create-sop-title" className="text-lg font-semibold text-white">Create SOP</h2>
-              <button type="button" onClick={() => setCreating(false)} aria-label="Close" className="text-gray-400 hover:text-white">✕</button>
-            </div>
-            <div className="p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">SOP Name *</label>
-                  <input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="e.g. Reels Production Workflow"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Category</label>
-                  <select
-                    value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    {Object.entries(CATEGORY_LABEL_FULL).map(([k, v]) => (
-                      <option key={k} value={k}>{v}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-xs text-gray-400 font-medium">Steps *</label>
-                  <button onClick={addStep} className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300">
-                    <Plus className="w-3 h-3" />
-                    Add step
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {steps.map((step, i) => (
-                    <div key={i} className="flex gap-3 items-start">
-                      <div className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-xs flex items-center justify-center shrink-0 font-bold mt-2">
-                        {i + 1}
-                      </div>
-                      <div className="flex-1 space-y-1.5">
-                        <input
-                          value={step.title}
-                          onChange={(e) => updateStep(i, "title", e.target.value)}
-                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          placeholder={`Step ${i + 1} title`}
-                        />
-                        <input
-                          value={step.description ?? ""}
-                          onChange={(e) => updateStep(i, "description", e.target.value)}
-                          className="w-full px-3 py-1.5 bg-gray-800/60 border border-gray-700/50 rounded-lg text-xs text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                          placeholder="Optional details"
-                        />
-                      </div>
-                      {steps.length > 1 && (
-                        <button type="button" onClick={() => removeStep(i)} aria-label={`Remove step ${i + 1}`} className="text-gray-600 hover:text-red-400 mt-2 transition-colors">
-                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
-              <button type="button" onClick={() => setCreating(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
-              <button
-                type="button"
+        <Modal
+          title="Create SOP"
+          size="xl"
+          onClose={() => setCreating(false)}
+          footer={
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setCreating(false)}>Cancel</Button>
+              <Button
+                size="sm"
+                loading={create.isPending}
+                disabled={!form.name || steps.some((s) => !s.title)}
                 onClick={() => create.mutate({ ...form, steps })}
-                disabled={!form.name || steps.some((s) => !s.title) || create.isPending}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                {create.isPending ? "Saving..." : "Save SOP"}
-              </button>
+                Save SOP
+              </Button>
+            </>
+          }
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="s-name" className="mb-1.5 block text-xs font-medium text-gray-400">SOP name <span className="text-gray-600">*</span></label>
+              <input id="s-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} placeholder="e.g. Reels production workflow" />
+            </div>
+            <div>
+              <label htmlFor="s-cat" className="mb-1.5 block text-xs font-medium text-gray-400">Category</label>
+              <select id="s-cat" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass}>
+                {Object.entries(CATEGORY_LABEL_FULL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
             </div>
           </div>
-        </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <label className="text-xs font-medium text-gray-400">Steps <span className="text-gray-600">*</span></label>
+              <button onClick={addStep} className="flex items-center gap-1 text-xs text-gray-400 transition-colors hover:text-white">
+                <Plus className="h-3 w-3" /> Add step
+              </button>
+            </div>
+            <div className="space-y-3">
+              {steps.map((step, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className="mt-2 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-indigo-500/15 text-[11px] font-semibold text-indigo-300">
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 space-y-1.5">
+                    <input value={step.title} onChange={(e) => updateStep(i, "title", e.target.value)} className={inputClass} placeholder={`Step ${i + 1} title`} />
+                    <input value={step.description ?? ""} onChange={(e) => updateStep(i, "description", e.target.value)} className={cn(inputClass, "text-xs")} placeholder="Optional details" />
+                  </div>
+                  {steps.length > 1 && (
+                    <button type="button" onClick={() => removeStep(i)} aria-label={`Remove step ${i + 1}`} className="mt-2 text-gray-600 transition-colors hover:text-red-400">
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

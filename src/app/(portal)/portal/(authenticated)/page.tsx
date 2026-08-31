@@ -55,7 +55,7 @@ export default function PortalOverviewPage() {
     <div className="space-y-8">
       {/* Hero */}
       <div className="bg-gradient-to-r from-indigo-600/20 to-purple-600/10 border border-indigo-500/20 rounded-2xl p-6">
-        <h1 className="text-2xl font-bold text-white mb-1">Your Project Dashboard</h1>
+        <h1 className="text-[22px] font-semibold tracking-tight text-white mb-1">Your Project Dashboard</h1>
         <p className="text-gray-400 text-sm">Track deliverables, approve work, and monitor progress — all in one place.</p>
       </div>
 

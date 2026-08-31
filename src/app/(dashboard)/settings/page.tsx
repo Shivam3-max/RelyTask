@@ -23,6 +23,8 @@ export default function SettingsPage() {
   const [avatar, setAvatar] = useState<string>("");
 
   useEffect(() => {
+    // Seed the editable fields from the session once it resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (session?.user.name && !name) setName(session.user.name);
     if (session?.user.avatar && !avatar) setAvatar(session.user.avatar);
   // eslint-disable-next-line react-hooks/exhaustive-deps

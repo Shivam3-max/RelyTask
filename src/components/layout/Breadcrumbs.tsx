@@ -33,17 +33,17 @@ export function Breadcrumbs() {
   });
 
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-xs text-gray-500 mb-4">
-      <Link href="/dashboard" className="hover:text-gray-300 transition-colors">
-        <Home className="w-3.5 h-3.5" />
+    <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1 text-xs text-gray-600">
+      <Link href="/dashboard" className="transition-colors hover:text-gray-300">
+        <Home className="h-3.5 w-3.5" aria-hidden="true" />
       </Link>
       {crumbs.map(({ href, label, isLast }) => (
         <span key={href} className="flex items-center gap-1">
-          <ChevronRight className="w-3 h-3" />
+          <ChevronRight className="h-3 w-3 text-gray-700" aria-hidden="true" />
           {isLast ? (
-            <span className="text-gray-300">{label}</span>
+            <span className="font-medium capitalize text-gray-300">{label}</span>
           ) : (
-            <Link href={href} className="hover:text-gray-300 transition-colors">{label}</Link>
+            <Link href={href} className="capitalize transition-colors hover:text-gray-300">{label}</Link>
           )}
         </span>
       ))}

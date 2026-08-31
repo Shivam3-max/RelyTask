@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Bell, CheckCheck, X } from "lucide-react";
+import { Bell, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Notification = {
@@ -88,16 +88,16 @@ export function NotificationBell() {
           id="notification-panel"
           role="menu"
           aria-label="Notifications"
-          className="absolute bottom-10 left-0 lg:bottom-auto lg:top-full lg:left-0 mt-1 w-80 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl z-50 overflow-hidden"
+          className="absolute bottom-10 left-0 z-50 mt-1 w-80 overflow-hidden rounded-xl border border-gray-800 bg-gray-900 shadow-2xl lg:bottom-auto lg:left-0 lg:top-full"
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+          <div className="flex items-center justify-between border-b border-gray-800 px-4 py-3">
             <h3 className="text-sm font-semibold text-white">Notifications</h3>
             {unread > 0 && (
               <button
                 onClick={() => markAll.mutate()}
-                className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300"
+                className="flex items-center gap-1 text-xs text-gray-400 transition-colors hover:text-white"
               >
-                <CheckCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
                 Mark all read
               </button>
             )}
@@ -115,8 +115,8 @@ export function NotificationBell() {
                 disabled={!!n.readAt}
                 aria-label={n.readAt ? n.title : `Mark "${n.title}" as read`}
                 className={cn(
-                  "w-full text-left flex gap-3 px-4 py-3 transition-colors",
-                  n.readAt ? "opacity-50 cursor-default" : "hover:bg-gray-800 cursor-pointer"
+                  "flex w-full gap-3 px-4 py-3 text-left transition-colors",
+                  n.readAt ? "cursor-default opacity-50" : "cursor-pointer hover:bg-gray-800/50"
                 )}
               >
                 <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", TYPE_COLOR[n.type] ?? "bg-gray-500")} />
