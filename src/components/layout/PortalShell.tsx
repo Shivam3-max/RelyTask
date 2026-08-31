@@ -26,7 +26,7 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 md:h-16 md:px-6">
           <div className="flex items-center gap-7">
             <Link href="/portal" className="flex items-center gap-2.5">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-600 text-[12px] font-bold text-white">R</span>
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-600 text-[12px] font-bold text-onblue">R</span>
               <span className="text-sm font-semibold tracking-tight text-white">
                 RELYTASK <span className="font-normal text-gray-500">Portal</span>
               </span>
@@ -66,7 +66,7 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-9 animate-rt-fade-up">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-9">{children}</main>
 
       {/* Mobile bottom nav */}
       <nav aria-label="Client portal mobile navigation" className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-gray-800 bg-gray-950/90 backdrop-blur md:hidden">

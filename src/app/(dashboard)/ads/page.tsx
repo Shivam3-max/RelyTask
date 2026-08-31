@@ -9,6 +9,8 @@ import { PLATFORM_COLOR } from "@/lib/constants";
 import { usePageTitle } from "@/lib/hooks";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { inputClass } from "@/components/ui/Input";
 
 const PAGE_SIZE = 15;
 
@@ -189,20 +191,25 @@ export default function AdsPage() {
 
       {/* Manual entry modal */}
       {adding && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="add-metrics-title">
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md">
-            <div className="flex items-center justify-between p-6 border-b border-gray-800">
-              <h2 id="add-metrics-title" className="text-lg font-semibold text-white">Add Ad Metrics</h2>
-              <button type="button" onClick={() => setAdding(false)} aria-label="Close" className="text-gray-400 hover:text-white">✕</button>
-            </div>
-            <div className="p-6 space-y-4">
+        <Modal
+          title="Add ad metrics"
+          onClose={() => setAdding(false)}
+          footer={
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setAdding(false)}>Cancel</Button>
+              <Button size="sm" loading={addMetric.isPending} disabled={!form.clientId} onClick={() => addMetric.mutate()}>
+                Save metrics
+              </Button>
+            </>
+          }
+        >
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-400 mb-1.5">Client *</label>
                   <select
                     value={form.clientId}
                     onChange={(e) => setForm({ ...form, clientId: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className={inputClass}
                   >
                     <option value="">Select client</option>
                     {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -213,7 +220,7 @@ export default function AdsPage() {
                   <select
                     value={form.platform}
                     onChange={(e) => setForm({ ...form, platform: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className={inputClass}
                   >
                     <option value="META">Meta</option>
                     <option value="GOOGLE">Google</option>
@@ -227,7 +234,7 @@ export default function AdsPage() {
                     value={form.accountName}
                     onChange={(e) => setForm({ ...form, accountName: e.target.value })}
                     placeholder="Optional"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className={inputClass}
                   />
                 </div>
                 <div>
@@ -236,7 +243,7 @@ export default function AdsPage() {
                     type="date"
                     value={form.date}
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className={inputClass}
                   />
                 </div>
               </div>
@@ -254,25 +261,12 @@ export default function AdsPage() {
                       value={form[key as keyof typeof form]}
                       onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                       placeholder={placeholder}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className={inputClass}
                     />
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
-              <button type="button" onClick={() => setAdding(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
-              <button
-                type="button"
-                onClick={() => addMetric.mutate()}
-                disabled={!form.clientId || addMetric.isPending}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                {addMetric.isPending ? "Saving..." : "Save Metrics"}
-              </button>
-            </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

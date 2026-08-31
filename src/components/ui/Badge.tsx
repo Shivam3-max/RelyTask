@@ -3,11 +3,11 @@ import { cn } from "@/lib/utils";
 type Tone = "neutral" | "accent" | "success" | "warning" | "danger" | "info";
 
 const TONES: Record<Tone, string> = {
-  neutral: "bg-gray-800/80 text-gray-300 border-gray-700/50",
-  accent: "bg-indigo-500/12 text-indigo-300 border-indigo-500/25",
-  success: "bg-green-500/12 text-green-400 border-green-500/25",
-  warning: "bg-yellow-400/12 text-yellow-400 border-yellow-400/25",
-  danger: "bg-red-500/12 text-red-400 border-red-500/25",
+  neutral: "bg-gray-100 text-gray-400 border-gray-800",
+  accent: "bg-indigo-900 text-indigo-700 border-indigo-950",
+  success: "bg-green-400/12 text-green-500 border-green-400/25",
+  warning: "bg-yellow-400/12 text-yellow-400 border-yellow-400/30",
+  danger: "bg-red-400/12 text-red-500 border-red-400/25",
   info: "bg-blue-400/12 text-blue-400 border-blue-400/25",
 };
 

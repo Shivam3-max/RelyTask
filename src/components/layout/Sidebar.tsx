@@ -67,17 +67,15 @@ function SidebarContent({ pathname, session, isAdmin, canViewAllTasks, onNavClic
   return (
     <div className="flex flex-col h-full bg-gray-900">
       {/* Wordmark */}
-      <div className="flex items-center justify-between px-4 h-14 shrink-0 border-b border-gray-800/70">
-        <Link href="/dashboard" onClick={onNavClick} className="flex items-center gap-2.5">
-          <span className="grid place-items-center w-7 h-7 rounded-lg bg-indigo-600 text-white text-[13px] font-bold shrink-0">
-            R
-          </span>
-          <span className="text-[15px] font-semibold text-white tracking-tight">RELYTASK</span>
+      <div className="flex items-center justify-between px-4 h-14 shrink-0 border-b border-gray-800">
+        <Link href="/dashboard" onClick={onNavClick} className="flex items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/Logo.png" alt="RELYTASK" className="h-7 w-auto" />
         </Link>
         <button
           onClick={onNavClick}
           aria-label="Close navigation"
-          className="lg:hidden -mr-1 p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
+          className="lg:hidden -mr-1 p-1.5 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-100"
         >
           <X className="w-4 h-4" aria-hidden="true" />
         </button>
@@ -108,19 +106,16 @@ function SidebarContent({ pathname, session, isAdmin, canViewAllTasks, onNavClic
                       onClick={onNavClick}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "group relative flex items-center gap-2.5 rounded-lg px-2.5 h-8 text-[13px] font-medium transition-colors",
+                        "group relative flex items-center gap-2.5 rounded px-2.5 h-8 text-[13px] font-medium transition-colors",
                         active
-                          ? "bg-gray-800/70 text-white"
-                          : "text-gray-400 hover:text-gray-100 hover:bg-gray-800/40"
+                          ? "bg-indigo-900 text-indigo-700"
+                          : "text-gray-400 hover:text-gray-300 hover:bg-gray-100"
                       )}
                     >
-                      {active && (
-                        <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-indigo-500" aria-hidden="true" />
-                      )}
                       <Icon
                         className={cn(
                           "w-4 h-4 shrink-0 transition-colors",
-                          active ? "text-indigo-400" : "text-gray-500 group-hover:text-gray-300"
+                          active ? "text-indigo-700" : "text-gray-600 group-hover:text-gray-400"
                         )}
                         aria-hidden="true"
                       />
@@ -171,10 +166,10 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-14 bg-gray-900/90 backdrop-blur border-b border-gray-800">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <span className="grid place-items-center w-6 h-6 rounded-md bg-indigo-600 text-white text-[11px] font-bold">R</span>
-          <span className="text-sm font-semibold text-white tracking-tight">RELYTASK</span>
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-14 bg-gray-900 border-b border-gray-800">
+        <Link href="/dashboard" className="flex items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/Logo.png" alt="RELYTASK" className="h-6 w-auto" />
         </Link>
         <div className="flex items-center gap-1">
           <NotificationBell />
@@ -183,7 +178,7 @@ export function Sidebar() {
             aria-label="Open navigation"
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav-drawer"
-            className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-100 transition-colors"
           >
             <Menu className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -193,7 +188,7 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 bg-[#091e4266] z-40"
           aria-hidden="true"
           onClick={() => setMobileOpen(false)}
         />

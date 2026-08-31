@@ -6,11 +6,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { usePageTitle } from "@/lib/hooks";
 import axios from "axios";
-import { Plus, AlertTriangle, Filter, X } from "lucide-react";
+import { Plus, AlertTriangle, Filter } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Modal } from "@/components/ui/Modal";
 import { inputClass } from "@/components/ui/Input";
 import { formatDate, isOverdue } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissions";
@@ -371,15 +372,19 @@ export default function TasksPage() {
 
       {/* Create task modal */}
       {creating && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="create-task-title">
-          <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 shadow-2xl">
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-800 px-5 py-4">
-              <h2 id="create-task-title" className="text-sm font-semibold text-white">Create task</h2>
-              <button type="button" onClick={() => setCreating(false)} aria-label="Close" className="rounded-md p-1 text-gray-500 hover:bg-gray-800 hover:text-white">
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
-            <div className="flex-1 space-y-4 overflow-y-auto p-5">
+        <Modal
+          title="Create task"
+          size="lg"
+          onClose={() => setCreating(false)}
+          footer={
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setCreating(false)}>Cancel</Button>
+              <Button size="sm" onClick={() => create.mutate(form)} loading={create.isPending} disabled={!form.title}>
+                Create task
+              </Button>
+            </>
+          }
+        >
               <div>
                 <label className="block text-xs text-gray-400 mb-1.5">Title *</label>
                 <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -461,15 +466,7 @@ export default function TasksPage() {
                 <button onClick={() => setForm({ ...form, subtasks: [...form.subtasks, ""] })}
                   className="mt-1 text-xs text-gray-400 transition-colors hover:text-white">+ Add step</button>
               </div>
-            </div>
-            <div className="flex shrink-0 items-center justify-end gap-2 border-t border-gray-800 px-5 py-4">
-              <Button variant="ghost" size="sm" onClick={() => setCreating(false)}>Cancel</Button>
-              <Button size="sm" onClick={() => create.mutate(form)} loading={create.isPending} disabled={!form.title}>
-                Create task
-              </Button>
-            </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Task detail modal */}

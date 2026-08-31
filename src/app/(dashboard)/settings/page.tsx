@@ -189,7 +189,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-500">{desc}</p>
               </div>
               <button className="relative w-10 h-5 bg-indigo-500 rounded-full transition-colors">
-                <span className="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow" />
+                <span className="absolute right-0.5 top-0.5 w-4 h-4 bg-onblue rounded-full shadow" />
               </button>
             </div>
           ))}

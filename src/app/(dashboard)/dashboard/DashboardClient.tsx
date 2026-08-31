@@ -23,15 +23,15 @@ const STATUS_TONE: Record<string, "neutral" | "info" | "warning" | "accent" | "s
   DONE: "success",
 };
 
-// Chart theme — kept in one place so every surface reads as one system.
+// Chart theme — Atlassian-style light palette, one system everywhere.
 const CHART = {
-  accent: "#6b78f5",
-  positive: "#3ecf7e",
-  axis: "#6b6b73",
-  grid: "#1f1f23",
-  tooltip: { background: "#141417", border: "1px solid #232328", borderRadius: 10, fontSize: 12, padding: "8px 10px" },
-  tooltipLabel: { color: "#8b8b96", marginBottom: 2 },
-  series: ["#6b78f5", "#8f9cff", "#b78bff", "#5fa8ff", "#3fd8c8", "#3ecf7e"],
+  accent: "#0c66e4",
+  positive: "#22a06b",
+  axis: "#626f86",
+  grid: "#ebecf0",
+  tooltip: { background: "#ffffff", border: "1px solid #dfe1e6", borderRadius: 6, fontSize: 12, padding: "8px 10px", boxShadow: "0 4px 12px -2px rgba(9,30,66,0.15)", color: "#172b4d" },
+  tooltipLabel: { color: "#626f86", marginBottom: 2 },
+  series: ["#0c66e4", "#579dff", "#6e5dc6", "#1d7afc", "#1d9aaa", "#22a06b"],
 };
 
 function getTimeOfDay() {
@@ -233,7 +233,7 @@ export function DashboardClient({ data, user }: Props) {
                 <CartesianGrid stroke={CHART.grid} vertical={false} />
                 <XAxis dataKey="name" tick={{ fill: CHART.axis, fontSize: 10 }} axisLine={false} tickLine={false} dy={4} interval={0} />
                 <YAxis tick={{ fill: CHART.axis, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} width={40} />
-                <Tooltip contentStyle={CHART.tooltip} labelStyle={CHART.tooltipLabel} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+                <Tooltip contentStyle={CHART.tooltip} labelStyle={CHART.tooltipLabel} cursor={{ fill: "rgba(9,30,66,0.04)" }} />
                 <Bar dataKey="value" name="Tasks" radius={[5, 5, 0, 0]} maxBarSize={38}>
                   {categoryBreakdown.map((_, i) => (
                     <Cell key={i} fill={CHART.series[i % CHART.series.length]} />
@@ -258,11 +258,11 @@ export function DashboardClient({ data, user }: Props) {
                   <Tooltip
                     contentStyle={CHART.tooltip}
                     labelStyle={CHART.tooltipLabel}
-                    cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                    cursor={{ fill: "rgba(9,30,66,0.04)" }}
                   />
                   <Bar dataKey="tasks" name="Tasks" radius={[0, 5, 5, 0]} maxBarSize={22}>
                     {teamWorkload.map((entry, i) => (
-                      <Cell key={i} fill={entry.tasks >= 8 ? "#f0484a" : entry.tasks >= 5 ? "#ff9557" : CHART.accent} />
+                      <Cell key={i} fill={entry.tasks >= 8 ? "#c9372c" : entry.tasks >= 5 ? "#a54800" : CHART.accent} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -270,8 +270,8 @@ export function DashboardClient({ data, user }: Props) {
             )}
             <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
               <Legend swatch={CHART.accent} label="Normal" />
-              <Legend swatch="#ff9557" label="Busy 5+" />
-              <Legend swatch="#f0484a" label="Overloaded 8+" />
+              <Legend swatch="#a54800" label="Busy 5+" />
+              <Legend swatch="#c9372c" label="Overloaded 8+" />
             </div>
           </SectionCard>
         )}

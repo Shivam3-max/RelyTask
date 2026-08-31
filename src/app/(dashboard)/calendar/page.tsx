@@ -148,7 +148,7 @@ export default function CalendarPage() {
                 >
                   <div className={cn(
                     "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mb-1",
-                    isToday(cell.day) && cell.curr ? "bg-indigo-500 text-white" : "text-gray-400"
+                    isToday(cell.day) && cell.curr ? "bg-indigo-500 text-onblue" : "text-gray-400"
                   )}>
                     {cell.day}
                   </div>
@@ -195,7 +195,7 @@ export default function CalendarPage() {
                       <span className="text-xs text-gray-500">{CATEGORY_LABEL[task.category]}</span>
                       {task.assignee && (
                         <div className="flex items-center gap-1">
-                          <div className="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-[9px] font-bold text-white">
+                          <div className="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-[9px] font-bold text-onblue">
                             {task.assignee.name.charAt(0)}
                           </div>
                           <span className="text-xs text-gray-400">{task.assignee.name.split(" ")[0]}</span>

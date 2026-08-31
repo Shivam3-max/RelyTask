@@ -82,7 +82,7 @@ export function GlobalSearch() {
 
       {/* Modal */}
       {open && (
-        <div className="fixed inset-0 z-[200] flex items-start justify-center bg-black/70 px-4 pt-[15vh] backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Search">
+        <div className="fixed inset-0 z-[200] flex items-start justify-center bg-[#091e4266] px-4 pt-[15vh]" role="dialog" aria-modal="true" aria-label="Search">
           <div ref={ref} className="w-full max-w-lg overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 shadow-2xl">
             {/* Input */}
             <div className="flex items-center gap-3 border-b border-gray-800 px-4 py-3">
