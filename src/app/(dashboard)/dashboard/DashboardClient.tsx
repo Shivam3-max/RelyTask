@@ -147,7 +147,7 @@ export function DashboardClient({ data, user }: Props) {
         </div>
         <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
           <div
-            className="h-full rounded-full rt-gradient transition-[width] duration-700 ease-out"
+            className="h-full rounded-full bg-indigo-500 rt-gradient transition-[width] duration-700 ease-out"
             style={{ width: `${completion}%` }}
           />
         </div>
