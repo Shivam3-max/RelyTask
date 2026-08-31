@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -29,6 +30,29 @@ function getTimeOfDay() {
   if (h < 12) return "morning";
   if (h < 17) return "afternoon";
   return "evening";
+}
+
+// Renders nothing until mounted so the server/client markup can't disagree on
+// the current minute; then shows the local date + 12-hour time, refreshed each
+// half-minute.
+function LiveDateTime() {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    // Client-only: sync to the real clock after hydration, then keep it current.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  if (!now) return null;
+  return (
+    <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 bg-gray-900 border border-gray-800 px-3 py-2 rounded-lg">
+      <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+      {now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
+      {" · "}
+      {now.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })}
+    </div>
+  );
 }
 
 type RecentTask = {
@@ -86,12 +110,9 @@ export function DashboardClient({ data, user }: Props) {
           <h1 className="text-xl md:text-2xl font-bold text-white">
             Good {getTimeOfDay()}, {user.name.split(" ")[0]} 👋
           </h1>
-          <p className="text-gray-400 text-sm mt-0.5">Here&apos;s what&apos;s happening across your agency today</p>
+          <p className="text-gray-400 text-sm mt-0.5">Here&apos;s what&apos;s happening across your organization today</p>
         </div>
-        <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 bg-gray-900 border border-gray-800 px-3 py-2 rounded-lg">
-          <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-          {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
-        </div>
+        <LiveDateTime />
       </div>
 
       {/* KPI Cards */}
@@ -106,7 +127,7 @@ export function DashboardClient({ data, user }: Props) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-indigo-400" aria-hidden="true" />
-            <span className="text-sm font-semibold text-white">Agency Performance</span>
+            <span className="text-sm font-semibold text-white">Organization Performance</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-gray-400">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500 inline-block" /> Completed</span>
@@ -341,7 +362,7 @@ export function DashboardClient({ data, user }: Props) {
       <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/5 border border-indigo-500/20 rounded-xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <Zap className="w-4 h-4 text-indigo-400" aria-hidden="true" />
-          <h3 className="text-sm font-semibold text-white">Coming Next — Agency Power Features</h3>
+          <h3 className="text-sm font-semibold text-white">Coming Next — Power Features</h3>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[

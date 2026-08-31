@@ -18,7 +18,7 @@ test.describe("Dashboard — admins see more than regular users", () => {
     await expect(main.getByText("Clients", { exact: true })).toBeVisible();
     await expect(main.getByText("Team Workload")).toBeVisible();
     await expect(main.getByText("Recent Clients")).toBeVisible();
-    await expect(main.getByText("Coming Next — Agency Power Features")).toBeVisible();
+    await expect(main.getByText("Coming Next — Power Features")).toBeVisible();
   });
 
   test("a non-admin role (video_editor) gets a personal dashboard, not the org-wide one", async ({ page }) => {
@@ -34,7 +34,7 @@ test.describe("Dashboard — admins see more than regular users", () => {
     await expect(main.getByText("Clients", { exact: true })).toHaveCount(0);
     await expect(main.getByText("Team Workload")).toHaveCount(0);
     await expect(main.getByText("Recent Clients")).toHaveCount(0);
-    await expect(main.getByText("Coming Next — Agency Power Features")).toHaveCount(0);
+    await expect(main.getByText("Coming Next — Power Features")).toHaveCount(0);
 
     // Team Members count stays visible — the Team directory itself is open
     // to every role (see Sidebar.tsx), so hiding just the count here would
