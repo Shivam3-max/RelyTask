@@ -21,17 +21,20 @@ const ALL_PERMISSIONS = [
 ];
 
 async function main() {
-  // Create permissions
-  const permissions = await Promise.all(
-    ALL_PERMISSIONS.map((p) => {
-      const [module, action] = p.split(":");
-      return prisma.permission.upsert({
+  // Create permissions. Sequential on purpose — a parallel burst (Promise.all)
+  // opens ~30 connections at once and trips the per-user connection cap on
+  // shared MySQL hosts (Hostinger etc.), surfacing as P1001 "can't reach".
+  const permissions: { id: string }[] = [];
+  for (const p of ALL_PERMISSIONS) {
+    const [module, action] = p.split(":");
+    permissions.push(
+      await prisma.permission.upsert({
         where: { id: p },
         update: {},
         create: { id: p, module, action },
-      });
-    })
-  );
+      })
+    );
+  }
 
   // This seed is designed to run automatically on every deploy, so it must be
   // idempotent and MUST NOT overwrite data an admin may have changed. Roles are

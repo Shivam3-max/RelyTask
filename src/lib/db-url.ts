@@ -35,7 +35,10 @@ export function buildDatabaseUrl(): string {
   }
 
   const auth = `${encodeURIComponent(user)}:${encodeURIComponent(password)}`;
-  const query = params ? `?${params}` : "";
+  // Default to a small pool — shared MySQL hosts cap connections per user.
+  const query = params
+    ? `?${params}`
+    : "?connection_limit=5&pool_timeout=20";
   return `mysql://${auth}@${host}:${port}/${name}${query}`;
 }
 
