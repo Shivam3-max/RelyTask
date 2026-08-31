@@ -7,7 +7,7 @@ import { loginStaff } from "./helpers";
 // chart being the one exception). These specs pin the split: admins get the
 // full org-wide view, other roles get a dashboard scoped to their own work.
 test.describe("Dashboard — admins see more than regular users", () => {
-  test("master_admin sees org-wide KPIs, Team Workload, and Recent Clients", async ({ page }) => {
+  test("superadmin sees org-wide KPIs, Team Workload, and Recent Clients", async ({ page }) => {
     await loginStaff(page, ADMIN.email, ADMIN.password);
     await page.goto("/dashboard");
     // Scoped to the page content, not the sidebar — "Clients" etc. also

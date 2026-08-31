@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/Toast";
 import { usePageTitle } from "@/lib/hooks";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { getAvatarColor } from "@/lib/constants";
+import { isAdminRole } from "@/lib/permissions";
 
 type User = {
   id: string;
@@ -30,7 +31,7 @@ export default function TeamPage() {
   const qc = useQueryClient();
   const { data: session } = useSession();
   const { toast } = useToast();
-  const isAdmin = session?.user.role === "master_admin";
+  const isAdmin = isAdminRole(session?.user.role);
   const [creating, setCreating] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [form, setForm] = useState({ name: "", email: "", password: "", phone: "", roleId: "" });

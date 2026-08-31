@@ -20,10 +20,12 @@ type Leader = {
 
 const MEDAL = ["🥇","🥈","🥉"];
 const ROLE_COLOR: Record<string, string> = {
-  master_admin: "text-red-400 bg-red-400/10",
+  superadmin: "text-red-400 bg-red-400/10",
+  admin: "text-red-400 bg-red-400/10",
   project_manager: "text-purple-400 bg-purple-400/10",
   video_editor: "text-blue-400 bg-blue-400/10",
   graphic_designer: "text-pink-400 bg-pink-400/10",
+  social_media_handler: "text-teal-400 bg-teal-400/10",
   ads_manager: "text-yellow-400 bg-yellow-400/10",
 };
 

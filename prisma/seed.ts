@@ -59,11 +59,22 @@ async function main() {
       },
     });
 
-  // Master Admin role (all permissions)
-  const adminPermIds = permissions.map((p) => p.id);
-  const adminRole = await ensureRole(
-    "master_admin",
-    "Full access to everything",
+  // Superadmin — the single break-glass owner account, every permission.
+  const allPermIds = permissions.map((p) => p.id);
+  const superadminRole = await ensureRole(
+    "superadmin",
+    "Full access to everything — sole owner account",
+    true,
+    allPermIds
+  );
+
+  // Admin — everything except the owner-only actions: cannot delete team
+  // members or change global settings.
+  const adminOnlyExclusions = ["team:delete", "settings:update"];
+  const adminPermIds = allPermIds.filter((id) => !adminOnlyExclusions.includes(id));
+  await ensureRole(
+    "admin",
+    "Full access except deleting team members and changing global settings",
     true,
     adminPermIds
   );
@@ -102,13 +113,13 @@ async function main() {
   if (!existingAdmin) {
     await prisma.user.create({
       data: {
-        name: "Master Admin",
+        name: "Superadmin",
         email: adminEmail,
         password: await bcrypt.hash(adminPassword, 12),
-        roleId: adminRole.id,
+        roleId: superadminRole.id,
       },
     });
-    console.log(`   Created admin user: ${adminEmail}`);
+    console.log(`   Created superadmin user: ${adminEmail}`);
   }
 
   // Initial team. Each gets <firstname>@relytask.com and a shared temporary
@@ -116,8 +127,8 @@ async function main() {
   // admin above, these are create-only — a reseed never resets an existing
   // account, so changed passwords and role reassignments stick.
   const TEAM: { name: string; email: string; role: string }[] = [
-    { name: "Shivam", email: "shivam@relytask.com", role: "master_admin" },
-    { name: "Manik", email: "manik@relytask.com", role: "master_admin" },
+    { name: "Shivam", email: "shivam@relytask.com", role: "admin" },
+    { name: "Manik", email: "manik@relytask.com", role: "admin" },
     { name: "Shubham", email: "shubham@relytask.com", role: "graphic_designer" },
     { name: "Sumit", email: "sumit@relytask.com", role: "video_editor" },
     { name: "Gagandeep", email: "gagandeep@relytask.com", role: "video_editor" },

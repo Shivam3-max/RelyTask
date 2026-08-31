@@ -5,6 +5,15 @@ export function hasPermission(session: Session, module: Module, action: Action):
   return session.user.permissions.includes(`${module}:${action}`);
 }
 
+// The two org-owner roles. `superadmin` is the single break-glass account with
+// every permission; `admin` has everything except a few owner-only actions
+// (see prisma/seed.ts). Prefer an explicit `hasPermission()` check where a
+// specific capability is what matters — this helper is for "show the admin
+// area" style UI gates.
+export function isAdminRole(role: string | null | undefined): boolean {
+  return role === "superadmin" || role === "admin";
+}
+
 type OwnableTask = { assigneeId: string | null; creatorId: string };
 
 // "Own" a task = assigned to you OR created by you — matches how task

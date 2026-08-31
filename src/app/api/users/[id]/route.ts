@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPermission } from "@/lib/permissions";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -31,7 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { name, phone, roleId, isActive, password, avatar, currentPassword } = parsed.data;
 
   // Non-admins can only edit themselves
-  const isAdmin = session.user.role === "master_admin";
+  const isAdmin = hasPermission(session, "team", "update");
   if (!isAdmin && id !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

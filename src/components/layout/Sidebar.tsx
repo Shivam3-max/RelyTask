@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalSearch } from "./GlobalSearch";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, isAdminRole } from "@/lib/permissions";
 
 const navItems = [
   { href: "/dashboard",  label: "Dashboard",   icon: LayoutDashboard },
@@ -136,7 +136,7 @@ function SidebarContent({ pathname, session, isAdmin, canViewAllTasks, onNavClic
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const isAdmin = session?.user.role === "master_admin";
+  const isAdmin = isAdminRole(session?.user.role);
   const canViewAllTasks = !!session && hasPermission(session, "tasks", "read_all");
   const [mobileOpen, setMobileOpen] = useState(false);
 

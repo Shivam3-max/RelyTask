@@ -117,10 +117,11 @@ Nothing to do here — this is just what to expect. Each GitHub push triggers
    deploy fails and the currently running version stays up.
 2. **`prisma db seed`** (`prisma/seed.ts`) — idempotent bootstrap only:
    - creates the permission rows and the default roles **only if missing**
-     (`master_admin`, `project_manager`, `video_editor`, `graphic_designer`,
-     `social_media_handler`, `ads_manager`, `client`); an existing role and its
-     permission set are left untouched;
-   - creates the `SEED_ADMIN_EMAIL` admin user **only if it doesn't exist**;
+     (`superadmin`, `admin`, `project_manager`, `video_editor`,
+     `graphic_designer`, `social_media_handler`, `ads_manager`, `client`); an
+     existing role and its permission set are left untouched;
+   - creates the `SEED_ADMIN_EMAIL` user as the sole **superadmin** **only if it
+     doesn't exist**;
    - creates the initial team (`TEAM` in `seed.ts`) — each as
      `<firstname>@relytask.com` with `SEED_TEMP_PASSWORD` — **only if the email
      doesn't already exist**. A reseed never resets an existing account's

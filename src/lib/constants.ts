@@ -119,7 +119,7 @@ export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 // Roles that have admin-level access across the app — use this instead of inline arrays
-export const ADMIN_ROLES = ["master_admin", "project_manager"] as const;
+export const ADMIN_ROLES = ["superadmin", "admin", "project_manager"] as const;
 export type AdminRole = (typeof ADMIN_ROLES)[number];
 
 // Permission system modules and actions — used in role management UI and API

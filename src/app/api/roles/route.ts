@@ -30,7 +30,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "master_admin") {
+  if (!session || !hasPermission(session, "roles", "create")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

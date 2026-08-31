@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPermission } from "@/lib/permissions";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -26,7 +27,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "master_admin") {
+  if (!session || !hasPermission(session, "team", "create")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

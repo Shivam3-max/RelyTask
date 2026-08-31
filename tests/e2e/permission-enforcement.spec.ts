@@ -94,7 +94,7 @@ test.describe("Permission enforcement — menus and APIs match granted permissio
     expect(readRes.status()).toBe(403);
   });
 
-  test("master_admin (superadmin) keeps full access across every module this suite touches", async ({ page }) => {
+  test("superadmin keeps full access across every module this suite touches", async ({ page }) => {
     await loginStaff(page, ADMIN.email, ADMIN.password);
     const [clients, sops, ads, roles] = await Promise.all([
       page.request.get("/api/clients"),
