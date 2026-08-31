@@ -18,7 +18,10 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // The sole superadmin is the owner/break-glass account — never listed in the
+  // team directory or offered as an assignee.
   const users = await prisma.user.findMany({
+    where: { role: { name: { not: "superadmin" } } },
     include: { role: true, _count: { select: { assignedTasks: true } } },
     orderBy: { createdAt: "desc" },
   });
@@ -41,6 +44,13 @@ export async function POST(req: NextRequest) {
   }
 
   const { name, email, password, phone, roleId } = parsed.data;
+
+  // The superadmin role can't be handed out — there is exactly one, seeded.
+  const role = await prisma.role.findUnique({ where: { id: roleId }, select: { name: true } });
+  if (!role || role.name === "superadmin") {
+    return NextResponse.json({ error: "That role can't be assigned." }, { status: 422 });
+  }
+
   const hashed = await bcrypt.hash(password, 12);
 
   const user = await prisma.user.create({

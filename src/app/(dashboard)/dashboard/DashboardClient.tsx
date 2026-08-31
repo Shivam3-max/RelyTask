@@ -82,7 +82,10 @@ type ClientSummary = {
   projects: { status: string }[];
 };
 
-type WorkloadDatum = { name: string; tasks: number; role: string };
+type CapacityDatum = {
+  name: string; role: string;
+  overdue: number; thisWeek: number; later: number; total: number; load: string;
+};
 
 type Props = {
   data: {
@@ -90,7 +93,7 @@ type Props = {
     completionTrend: { day: string; completed: number; created: number }[];
     statusBreakdown: { name: string; value: number; color: string }[];
     categoryBreakdown: { name: string; value: number }[];
-    teamWorkload: WorkloadDatum[];
+    teamCapacity: CapacityDatum[];
     recentTasks: RecentTask[];
     clients: ClientSummary[];
   };
@@ -98,7 +101,7 @@ type Props = {
 };
 
 export function DashboardClient({ data, user }: Props) {
-  const { stats, completionTrend, statusBreakdown, categoryBreakdown, teamWorkload, recentTasks, clients } = data;
+  const { stats, completionTrend, statusBreakdown, categoryBreakdown, teamCapacity, recentTasks, clients } = data;
   const completion = stats.totalTasks ? Math.round((stats.doneTasks / stats.totalTasks) * 100) : 0;
   const isAdmin = (ADMIN_ROLES as readonly string[]).includes(user.role);
 
@@ -246,32 +249,34 @@ export function DashboardClient({ data, user }: Props) {
 
         {isAdmin && (
           <SectionCard>
-            <CardHead title="Team workload" sub="Active tasks per member" />
-            {teamWorkload.length === 0 ? (
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-white">Team capacity</h3>
+                <p className="mt-0.5 text-xs text-gray-500">Open tasks per member, by urgency</p>
+              </div>
+              <Link href="/capacity" className="flex items-center gap-1 text-xs text-gray-400 transition-colors hover:text-white">
+                Details <ArrowRight className="h-3 w-3" aria-hidden="true" />
+              </Link>
+            </div>
+            {teamCapacity.length === 0 ? (
               <EmptyChart label="No team members yet" />
             ) : (
-              <ResponsiveContainer width="100%" height={190}>
-                <BarChart data={teamWorkload} layout="vertical" margin={{ top: 0, right: 12, left: 0, bottom: 0 }}>
+              <ResponsiveContainer width="100%" height={Math.max(150, teamCapacity.length * 30)}>
+                <BarChart data={teamCapacity} layout="vertical" margin={{ top: 0, right: 12, left: 0, bottom: 0 }} barCategoryGap="28%">
                   <CartesianGrid stroke={CHART.grid} horizontal={false} />
                   <XAxis type="number" tick={{ fill: CHART.axis, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                  <YAxis type="category" dataKey="name" tick={{ fill: "#a0a0a6", fontSize: 11 }} axisLine={false} tickLine={false} width={58} />
-                  <Tooltip
-                    contentStyle={CHART.tooltip}
-                    labelStyle={CHART.tooltipLabel}
-                    cursor={{ fill: "rgba(9,30,66,0.04)" }}
-                  />
-                  <Bar dataKey="tasks" name="Tasks" radius={[0, 5, 5, 0]} maxBarSize={22}>
-                    {teamWorkload.map((entry, i) => (
-                      <Cell key={i} fill={entry.tasks >= 8 ? "#c9372c" : entry.tasks >= 5 ? "#a54800" : CHART.accent} />
-                    ))}
-                  </Bar>
+                  <YAxis type="category" dataKey="name" tick={{ fill: CHART.axis, fontSize: 11 }} axisLine={false} tickLine={false} width={62} />
+                  <Tooltip contentStyle={CHART.tooltip} labelStyle={CHART.tooltipLabel} cursor={{ fill: "rgba(9,30,66,0.04)" }} />
+                  <Bar dataKey="overdue" name="Overdue" stackId="c" fill="#c9372c" maxBarSize={18} />
+                  <Bar dataKey="thisWeek" name="This week" stackId="c" fill="#a54800" maxBarSize={18} />
+                  <Bar dataKey="later" name="Later" stackId="c" fill={CHART.accent} radius={[0, 4, 4, 0]} maxBarSize={18} />
                 </BarChart>
               </ResponsiveContainer>
             )}
-            <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
-              <Legend swatch={CHART.accent} label="Normal" />
-              <Legend swatch="#a54800" label="Busy 5+" />
-              <Legend swatch="#c9372c" label="Overloaded 8+" />
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-gray-500">
+              <Legend swatch="#c9372c" label="Overdue" />
+              <Legend swatch="#a54800" label="Due this week" />
+              <Legend swatch={CHART.accent} label="Later" />
             </div>
           </SectionCard>
         )}
@@ -318,27 +323,6 @@ export function DashboardClient({ data, user }: Props) {
           </div>
         ))}
       </ListCard>
-
-      {/* Roadmap */}
-      {isAdmin && (
-        <SectionCard>
-          <CardHead title="Coming next" sub="On the RELYTASK roadmap" />
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {[
-              { label: "AI brief writer", desc: "Client form → drafted brief", tag: "AI" },
-              { label: "Time tracker", desc: "Per-task timing → billing", tag: "Billing" },
-              { label: "Auto invoice", desc: "Approval → invoice sent", tag: "Revenue" },
-              { label: "Content calendar", desc: "Visual schedule per client", tag: "Planning" },
-            ].map(({ label, desc, tag }) => (
-              <div key={label} className="rounded-lg border border-gray-800 bg-gray-950/40 p-3">
-                <Badge tone="accent">{tag}</Badge>
-                <p className="mt-2 text-xs font-medium text-gray-100">{label}</p>
-                <p className="mt-0.5 text-[11px] text-gray-500">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-      )}
     </div>
   );
 }

@@ -51,10 +51,12 @@ export default function TeamPage() {
     queryFn: () => axios.get("/api/users").then((r) => r.data),
   });
 
-  const { data: roles = [] } = useQuery<Role[]>({
+  const { data: allRoles = [] } = useQuery<Role[]>({
     queryKey: ["roles"],
     queryFn: () => axios.get("/api/roles").then((r) => r.data),
   });
+  // `superadmin` is the single owner account — not assignable to anyone.
+  const roles = allRoles.filter((r) => r.name !== "superadmin");
 
   const create = useMutation({
     mutationFn: (data: typeof form) => axios.post("/api/users", data),

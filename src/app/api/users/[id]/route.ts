@@ -37,11 +37,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // The superadmin role is off-limits — can't be assigned, and the sole
+  // superadmin's own role can't be changed away either.
+  if (roleId && isAdmin) {
+    const [newRole, target] = await Promise.all([
+      prisma.role.findUnique({ where: { id: roleId }, select: { name: true } }),
+      prisma.user.findUnique({ where: { id }, select: { role: { select: { name: true } } } }),
+    ]);
+    if (!newRole || newRole.name === "superadmin" || target?.role.name === "superadmin") {
+      return NextResponse.json({ error: "That role can't be changed." }, { status: 422 });
+    }
+  }
+
   const data: Record<string, unknown> = {};
   if (name !== undefined) data.name = name;
   if (phone !== undefined) data.phone = phone;
   if (avatar !== undefined) data.avatar = avatar || null;
-  if (roleId !== undefined && isAdmin) data.roleId = roleId;
+  if (roleId && isAdmin) data.roleId = roleId;
   if (isActive !== undefined && isAdmin) data.isActive = isActive;
   if (password) {
     if (!isAdmin) {

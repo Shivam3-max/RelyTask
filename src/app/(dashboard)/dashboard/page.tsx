@@ -21,6 +21,8 @@ async function getDashboardData(session: Session) {
   const canSeeClients = hasPermission(session, "clients", "read");
 
   const now = new Date();
+  const weekOut = new Date(now);
+  weekOut.setDate(now.getDate() + 7);
   const last7 = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(now.getDate() - (6 - i));
@@ -42,7 +44,7 @@ async function getDashboardData(session: Session) {
     isAdmin
       ? prisma.project.count({ where: { status: "ACTIVE" } })
       : prisma.project.count({ where: { status: "ACTIVE", tasks: { some: taskWhere } } }),
-    prisma.user.count({ where: { isActive: true } }),
+    prisma.user.count({ where: { isActive: true, role: { name: { not: "superadmin" } } } }),
     canSeeClients ? prisma.client.count() : Promise.resolve(null),
     prisma.task.findMany({
       where: taskWhere,
@@ -58,9 +60,18 @@ async function getDashboardData(session: Session) {
       select: { status: true, category: true, priority: true, completedAt: true, createdAt: true },
     }),
     isAdmin ? prisma.user.findMany({
-      where: { isActive: true },
-      include: { _count: { select: { assignedTasks: true } }, role: true },
-      take: 6,
+      where: {
+        isActive: true,
+        role: { name: { notIn: ["superadmin", "client"] } },
+      },
+      include: {
+        role: { select: { name: true } },
+        assignedTasks: {
+          where: { status: { not: "DONE" } },
+          select: { dueDate: true },
+        },
+      },
+      take: 8,
     }) : Promise.resolve([]),
     isAdmin ? prisma.client.findMany({
       include: { projects: { select: { status: true } } },
@@ -99,19 +110,27 @@ async function getDashboardData(session: Session) {
   allTasks.forEach(t => { categoryMap[t.category] = (categoryMap[t.category] || 0) + 1; });
   const categoryBreakdown = Object.entries(categoryMap).map(([name, value]) => ({ name, value }));
 
-  type UserWithWorkload = { name: string; _count: { assignedTasks: number }; role: { name: string } };
-  const teamWorkload = (users as UserWithWorkload[]).map((u) => ({
-    name: u.name.split(" ")[0],
-    tasks: u._count.assignedTasks,
-    role: u.role.name.replace(/_/g, " "),
-  }));
+  // Team capacity — active (non-done) tasks per member, split by urgency.
+  type UserWithTasks = {
+    name: string;
+    role: { name: string };
+    assignedTasks: { dueDate: Date | null }[];
+  };
+  const teamCapacity = (users as UserWithTasks[]).map((u) => {
+    const overdue = u.assignedTasks.filter((t) => t.dueDate && t.dueDate < now).length;
+    const thisWeek = u.assignedTasks.filter((t) => t.dueDate && t.dueDate >= now && t.dueDate <= weekOut).length;
+    const total = u.assignedTasks.length;
+    const later = total - overdue - thisWeek;
+    const load = total >= 8 ? "overloaded" : total >= 5 ? "busy" : total >= 2 ? "normal" : "free";
+    return { name: u.name.split(" ")[0], role: u.role.name.replace(/_/g, " "), overdue, thisWeek, later, total, load };
+  }).sort((a, b) => b.total - a.total);
 
   return {
     stats: { totalTasks, doneTasks, overdueTasks, activeProjects, teamCount, clientCount },
     completionTrend,
     statusBreakdown,
     categoryBreakdown,
-    teamWorkload,
+    teamCapacity,
     recentTasks: recentTasks.map((t) => ({
       ...t,
       dueDate: t.dueDate?.toISOString() ?? null,
