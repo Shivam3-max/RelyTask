@@ -10,16 +10,16 @@ export function EmptyState({
   onAction?: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center mb-4">
-        <Icon className="w-6 h-6 text-gray-600" aria-hidden="true" />
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-800 bg-gray-900/40 py-16 px-6 text-center">
+      <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl border border-gray-800 bg-gray-900 text-gray-500">
+        <Icon className="h-5 w-5" aria-hidden="true" />
       </div>
-      <h3 className="text-sm font-semibold text-white mb-1">{title}</h3>
-      <p className="text-sm text-gray-500 max-w-xs mb-4">{description}</p>
+      <h3 className="text-sm font-semibold text-white">{title}</h3>
+      <p className="mt-1 max-w-xs text-[13px] text-gray-500">{description}</p>
       {action && onAction && (
         <button
           onClick={onAction}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
+          className="mt-4 inline-flex h-9 items-center rounded-lg bg-indigo-600 px-4 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
         >
           {action}
         </button>

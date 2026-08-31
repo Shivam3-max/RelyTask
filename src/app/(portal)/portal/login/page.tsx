@@ -4,7 +4,8 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Megaphone, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Input, Field } from "@/components/ui/Input";
 
 export default function PortalLoginPage() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function PortalLoginPage() {
     setError("");
     const result = await signIn("credentials", { email, password, redirect: false });
     if (result?.error) {
-      setError("Invalid credentials");
+      setError("That email and password don't match.");
       setLoading(false);
     } else {
       router.push("/portal");
@@ -27,62 +28,63 @@ export default function PortalLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center">
-            <Megaphone className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="text-xl font-bold text-white">RELYTASK</p>
-            <p className="text-[11px] text-gray-400 tracking-widest uppercase">Client Portal</p>
-          </div>
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gray-950 px-4 py-10">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(60rem 32rem at 50% -8rem, rgba(91,99,235,0.16), transparent 70%)" }}
+      />
+      <div className="relative w-full max-w-[400px] animate-rt-fade-up">
+        <div className="mb-7 flex items-center justify-center gap-2.5">
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-600 text-sm font-bold text-white">R</span>
+          <span className="text-lg font-semibold tracking-tight text-white">
+            RELYTASK <span className="font-normal text-gray-500">Portal</span>
+          </span>
         </div>
 
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 p-8">
-          <h1 className="text-xl font-semibold text-white mb-1">Client sign in</h1>
-          <p className="text-sm text-gray-400 mb-6">Access your project dashboard</p>
+        <div className="rounded-2xl border border-gray-800 bg-gray-900/80 p-7 backdrop-blur-sm">
+          <h1 className="text-lg font-semibold tracking-tight text-white">Client sign in</h1>
+          <p className="mt-1 text-sm text-gray-500">See your projects, approvals and reports.</p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">Email</label>
-              <input
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <Field label="Email" htmlFor="email">
+              <Input
+                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-3.5 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                autoComplete="email"
                 placeholder="you@company.com"
               />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">Password</label>
-              <input
+            </Field>
+            <Field label="Password" htmlFor="password">
+              <Input
+                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-3.5 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                autoComplete="current-password"
                 placeholder="••••••••"
               />
-            </div>
+            </Field>
             {error && (
-              <p className="text-xs text-red-400 bg-red-400/10 px-3 py-2 rounded-lg">{error}</p>
+              <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+                {error}
+              </p>
             )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              {loading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
+            <Button type="submit" loading={loading} className="w-full">
               Sign in
-            </button>
+            </Button>
           </form>
         </div>
 
-        <p className="text-center text-xs text-gray-600 mt-6">
-          Agency team?{" "}
-          <Link href="/login" className="text-indigo-400 hover:text-indigo-300">Sign in here</Link>
+        <p className="mt-6 text-center text-xs text-gray-600">
+          On the team?{" "}
+          <Link href="/login" className="text-gray-400 transition-colors hover:text-white">
+            Sign in here
+          </Link>
         </p>
       </div>
     </div>

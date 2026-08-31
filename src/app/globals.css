@@ -1,20 +1,153 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   RELYTASK design system — a Linear/Vercel-style dark workspace.
+
+   The app is styled almost entirely with Tailwind's default `gray-*` /
+   `indigo-*` scales and `rounded-*` radii. Rather than rewrite every page,
+   we retune those scales here so the whole product picks up one considered
+   dark palette, tighter radii, and the Geist type family.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Type */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+
+  /* Neutral ramp — cool near-black, soft hairline borders */
+  --color-gray-950: #0a0a0c;
+  --color-gray-900: #141417;
+  --color-gray-800: #232328;
+  --color-gray-700: #33333b;
+  --color-gray-600: #55555f;
+  --color-gray-500: #8b8b96;
+  --color-gray-400: #b3b3bd;
+  --color-gray-300: #d3d3db;
+  --color-gray-200: #e6e6ea;
+  --color-gray-100: #f2f2f4;
+
+  /* Accent — a restrained indigo/periwinkle */
+  --color-indigo-300: #b3bdff;
+  --color-indigo-400: #8f9cff;
+  --color-indigo-500: #6b78f5;
+  --color-indigo-600: #5b63eb;
+  --color-indigo-700: #4a4fd0;
+  --color-indigo-900: #241f4d;
+  --color-indigo-950: #171533;
+
+  /* Slightly desaturated status colors so they sit calmly on near-black */
+  --color-green-400: #4ade80;
+  --color-green-500: #3ecf7e;
+  --color-red-400: #ff6b6b;
+  --color-red-500: #f0484a;
+  --color-yellow-400: #f5c451;
+  --color-orange-400: #ff9557;
+  --color-purple-400: #b78bff;
+  --color-blue-400: #5fa8ff;
+  --color-pink-400: #ff7eb6;
+  --color-teal-400: #3fd8c8;
+
+  /* Tighter, more uniform radii */
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.875rem;
+}
+
 :root {
-  --background: #030712;
-  --foreground: #f9fafb;
-  --accent: #6366f1;
+  --background: #0a0a0c;
+  --foreground: #ededf0;
+  --accent: #5b63eb;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-inter), system-ui, sans-serif;
+@layer base {
+  * {
+    box-sizing: border-box;
+    border-color: var(--color-gray-800);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv01", "cv03", "cv04", "ss03";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Headings sit tighter than body copy */
+  h1, h2, h3, h4 {
+    letter-spacing: -0.014em;
+  }
+
+  /* App-wide interaction polish so every inline button/field feels considered */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+
+  button {
+    transition: background-color 0.15s ease, border-color 0.15s ease,
+      color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease,
+      transform 0.08s ease;
+  }
+  button:active:not(:disabled) { transform: translateY(0.5px) scale(0.99); }
+  button:disabled { cursor: not-allowed; opacity: 0.55; }
+
+  input, textarea, select {
+    transition: border-color 0.15s ease, box-shadow 0.15s ease,
+      background-color 0.15s ease;
+  }
+  input::placeholder, textarea::placeholder { color: var(--color-gray-600); }
 }
 
-* { box-sizing: border-box; }
+@layer utilities {
+  /* Fade-up used by page shells and the dashboard */
+  @keyframes rt-fade-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-rt-fade-up { animation: rt-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+}
 
-::-webkit-scrollbar { width: 5px; height: 5px; }
+::selection {
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  color: #fff;
+}
+
+/* Quiet, thin scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-gray-800);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-gray-700); background-clip: content-box; }
+* { scrollbar-width: thin; scrollbar-color: var(--color-gray-800) transparent; }
+
+/* One consistent focus ring for keyboard users */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Recharts polish — hide the default focus outline on chart surfaces */
+.recharts-wrapper:focus,
+.recharts-surface:focus { outline: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -25,9 +25,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         Skip to main content
       </a>
       <Sidebar />
-      <main id="main-content" className="flex-1 overflow-y-auto bg-gray-950" tabIndex={-1}>
+      <main id="main-content" className="flex-1 overflow-y-auto bg-gray-950 scroll-pt-20" tabIndex={-1}>
         {/* pt-20 on mobile clears the fixed h-14 top bar; lg gets normal spacing */}
-        <div className="max-w-7xl mx-auto px-4 md:px-8 pb-12 pt-20 lg:pt-10">
+        <div className="mx-auto w-full max-w-[1180px] px-4 md:px-8 pb-16 pt-20 lg:pt-10 animate-rt-fade-up">
           <Breadcrumbs />
           {children}
         </div>

@@ -4,7 +4,8 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Megaphone, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Input, Field } from "@/components/ui/Input";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,14 +19,10 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    const result = await signIn("credentials", { email, password, redirect: false });
 
     if (result?.error) {
-      setError("Invalid email or password");
+      setError("That email and password don't match. Try again.");
       setLoading(false);
     } else {
       router.push("/dashboard");
@@ -33,73 +30,53 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center">
-            <Megaphone className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="text-xl font-bold text-white leading-tight">RELYTASK</p>
-            <p className="text-[11px] text-gray-400 tracking-widest uppercase">SOPs Platform</p>
-          </div>
-        </div>
+    <>
+      <h1 className="text-lg font-semibold tracking-tight text-white">Sign in</h1>
+      <p className="mt-1 text-sm text-gray-500">Welcome back to your workspace.</p>
 
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 p-8">
-          <h1 className="text-xl font-semibold text-white mb-1">Welcome back</h1>
-          <p className="text-sm text-gray-400 mb-6">Sign in to your workspace</p>
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <Field label="Email" htmlFor="email">
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            placeholder="you@company.com"
+          />
+        </Field>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">
-                Email address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-3.5 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="you@agency.com"
-              />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium text-gray-400">Password</label>
-                <Link href="/forgot-password" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-                  Forgot password?
-                </Link>
-              </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-3.5 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="••••••••"
-              />
-            </div>
+        <Field
+          label="Password"
+          htmlFor="password"
+          action={
+            <Link href="/forgot-password" className="text-xs text-gray-500 transition-colors hover:text-gray-300">
+              Forgot?
+            </Link>
+          }
+        >
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+            placeholder="••••••••"
+          />
+        </Field>
 
-            {error && (
-              <p className="text-xs text-red-400 bg-red-400/10 px-3 py-2 rounded-lg">{error}</p>
-            )}
+        {error && (
+          <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+            {error}
+          </p>
+        )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              {loading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
-              Sign in
-            </button>
-          </form>
-        </div>
-
-        <p className="text-center text-xs text-gray-600 mt-6">
-          RELYTASK SOPs · Marketing Agency Platform
-        </p>
-      </div>
-    </div>
+        <Button type="submit" loading={loading} className="w-full">
+          Sign in
+        </Button>
+      </form>
+    </>
   );
 }

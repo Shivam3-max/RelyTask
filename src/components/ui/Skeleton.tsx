@@ -2,13 +2,16 @@ import { cn } from "@/lib/utils";
 
 export function Skeleton({ className }: { className?: string }) {
   return (
-    <div aria-hidden="true" className={cn("animate-pulse bg-gray-800 rounded-lg", className)} />
+    <div
+      aria-hidden="true"
+      className={cn("animate-pulse rounded-md bg-gray-800/70", className)}
+    />
   );
 }
 
 export function CardSkeleton() {
   return (
-    <div role="status" aria-label="Loading" className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
+    <div role="status" aria-label="Loading" className="space-y-3 rounded-xl border border-gray-800 bg-gray-900 p-5">
       <Skeleton className="h-4 w-2/3" />
       <Skeleton className="h-3 w-1/2" />
       <Skeleton className="h-3 w-3/4" />
