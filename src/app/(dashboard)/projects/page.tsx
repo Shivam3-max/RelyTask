@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Plus, FolderOpen, Calendar, CheckSquare } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { useToast } from "@/components/ui/Toast";
+import { PROJECT_STATUS_COLOR } from "@/lib/constants";
+import { usePageTitle } from "@/lib/hooks";
 
 type Project = {
   id: string;
@@ -20,20 +23,14 @@ type Project = {
 
 type Client = { id: string; name: string };
 
-const STATUS_COLOR: Record<string, string> = {
-  ACTIVE: "text-green-400 bg-green-400/10",
-  ON_HOLD: "text-yellow-400 bg-yellow-400/10",
-  COMPLETED: "text-blue-400 bg-blue-400/10",
-  CANCELLED: "text-red-400 bg-red-400/10",
-};
-
 export default function ProjectsPage() {
-  const router = useRouter();
+  usePageTitle("Projects");
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", clientId: "", startDate: "", dueDate: "" });
 
-  const { data: projects = [] } = useQuery<Project[]>({
+  const { data: projects = [], isLoading, isError } = useQuery<Project[]>({
     queryKey: ["projects"],
     queryFn: () => axios.get("/api/projects").then((r) => r.data),
   });
@@ -49,15 +46,24 @@ export default function ProjectsPage() {
       qc.invalidateQueries({ queryKey: ["projects"] });
       setCreating(false);
       setForm({ name: "", description: "", clientId: "", startDate: "", dueDate: "" });
+      toast("Project created", "success");
     },
+    onError: () => toast("Failed to create project", "error"),
   });
+
+  if (isError) return (
+    <div className="flex flex-col items-center justify-center py-24 text-center">
+      <p className="text-red-400 font-medium">Failed to load projects</p>
+      <p className="text-gray-500 text-sm mt-1">Check your connection and try refreshing</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-white">Projects</h1>
-          <p className="text-sm text-gray-400 mt-1">{projects.length} projects</p>
+          <p className="text-sm text-gray-400 mt-1">{isLoading ? "Loading…" : `${projects.length} projects`}</p>
         </div>
         <button
           onClick={() => setCreating(true)}
@@ -70,13 +76,13 @@ export default function ProjectsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {projects.map((project) => (
-          <div key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-indigo-500/50 transition-colors cursor-pointer">
+          <Link key={project.id} href={`/projects/${project.id}`} className="block bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-indigo-500/50 transition-colors">
             <div className="flex items-start justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <FolderOpen className="w-4 h-4 text-indigo-400 shrink-0" />
                 <h3 className="text-sm font-semibold text-white">{project.name}</h3>
               </div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLOR[project.status]}`}>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${PROJECT_STATUS_COLOR[project.status]}`}>
                 {project.status.replace("_", " ")}
               </span>
             </div>
@@ -99,16 +105,16 @@ export default function ProjectsPage() {
                 </div>
               )}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
       {creating && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="create-project-title">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-800">
-              <h2 className="text-lg font-semibold text-white">New Project</h2>
-              <button onClick={() => setCreating(false)} className="text-gray-400 hover:text-white">✕</button>
+              <h2 id="create-project-title" className="text-lg font-semibold text-white">New Project</h2>
+              <button type="button" onClick={() => setCreating(false)} aria-label="Close" className="text-gray-400 hover:text-white">✕</button>
             </div>
             <div className="p-6 space-y-4">
               <div>

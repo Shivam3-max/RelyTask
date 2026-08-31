@@ -1,11 +1,24 @@
-import { getServerSession } from "next-auth";
+import type { Metadata } from "next";
+import { getServerSession, type Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DashboardClient } from "./DashboardClient";
+import { ADMIN_ROLES } from "@/lib/constants";
+import { getTaskReadAccess, ownTasksFilter, hasPermission } from "@/lib/permissions";
 
-async function getDashboardData(userId: string, role: string) {
-  const isAdmin = ["master_admin", "project_manager"].includes(role);
-  const taskWhere = isAdmin ? {} : { assigneeId: userId };
+export const metadata: Metadata = { title: "Dashboard" };
+
+async function getDashboardData(session: Session) {
+  const userId = session.user.id;
+  const isAdmin = (ADMIN_ROLES as readonly string[]).includes(session.user.role);
+  const { canReadAll } = getTaskReadAccess(session);
+  const taskWhere = canReadAll ? {} : ownTasksFilter(userId);
+  // Client count is an org-wide business metric — only show it to roles that
+  // can actually read the Clients module (matches /api/clients' own gate).
+  // Team count stays ungated: the Team page/directory is intentionally open
+  // to every signed-in role (see Sidebar.tsx), so hiding just the number here
+  // would hide less than what's already visible on /team.
+  const canSeeClients = hasPermission(session, "clients", "read");
 
   const now = new Date();
   const last7 = Array.from({ length: 7 }, (_, i) => {
@@ -22,9 +35,15 @@ async function getDashboardData(userId: string, role: string) {
     prisma.task.count({ where: taskWhere }),
     prisma.task.count({ where: { ...taskWhere, status: "DONE" } }),
     prisma.task.count({ where: { ...taskWhere, dueDate: { lt: now }, status: { not: "DONE" } } }),
-    prisma.project.count({ where: { status: "ACTIVE" } }),
+    // Admins get the org-wide active-project total; everyone else gets the
+    // count scoped to projects they actually have a task in — an unscoped
+    // number here would leak the org's total project volume to a role with
+    // no projects:read permission at all.
+    isAdmin
+      ? prisma.project.count({ where: { status: "ACTIVE" } })
+      : prisma.project.count({ where: { status: "ACTIVE", tasks: { some: taskWhere } } }),
     prisma.user.count({ where: { isActive: true } }),
-    prisma.client.count(),
+    canSeeClients ? prisma.client.count() : Promise.resolve(null),
     prisma.task.findMany({
       where: taskWhere,
       include: {
@@ -80,8 +99,8 @@ async function getDashboardData(userId: string, role: string) {
   allTasks.forEach(t => { categoryMap[t.category] = (categoryMap[t.category] || 0) + 1; });
   const categoryBreakdown = Object.entries(categoryMap).map(([name, value]) => ({ name, value }));
 
-  // Team workload
-  const teamWorkload = (users as any[]).map(u => ({
+  type UserWithWorkload = { name: string; _count: { assignedTasks: number }; role: { name: string } };
+  const teamWorkload = (users as UserWithWorkload[]).map((u) => ({
     name: u.name.split(" ")[0],
     tasks: u._count.assignedTasks,
     role: u.role.name.replace(/_/g, " "),
@@ -93,7 +112,13 @@ async function getDashboardData(userId: string, role: string) {
     statusBreakdown,
     categoryBreakdown,
     teamWorkload,
-    recentTasks,
+    recentTasks: recentTasks.map((t) => ({
+      ...t,
+      dueDate: t.dueDate?.toISOString() ?? null,
+      updatedAt: t.updatedAt.toISOString(),
+      createdAt: t.createdAt.toISOString(),
+      completedAt: t.completedAt?.toISOString() ?? null,
+    })),
     clients,
   };
 }
@@ -101,6 +126,6 @@ async function getDashboardData(userId: string, role: string) {
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) return null;
-  const data = await getDashboardData(session.user.id, session.user.role);
+  const data = await getDashboardData(session);
   return <DashboardClient data={data} user={{ name: session.user.name, role: session.user.role }} />;
 }

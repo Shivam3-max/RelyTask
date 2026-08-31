@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { TrendingUp, DollarSign, MousePointer, Eye, Target, Plus } from "lucide-react";
+import { TrendingUp, DollarSign, MousePointer, Eye, Target, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
+import { PLATFORM_COLOR } from "@/lib/constants";
+import { usePageTitle } from "@/lib/hooks";
+
+const PAGE_SIZE = 15;
 
 type AdMetric = {
   id: string;
@@ -27,12 +31,14 @@ const EMPTY_FORM = {
 };
 
 export default function AdsPage() {
+  usePageTitle("Ad Tracker");
   const qc = useQueryClient();
   const { toast } = useToast();
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [page, setPage] = useState(1);
 
-  const { data: metrics = [] } = useQuery<AdMetric[]>({
+  const { data: metrics = [], isError: metricsError } = useQuery<AdMetric[]>({
     queryKey: ["ad-metrics"],
     queryFn: () => axios.get("/api/ads/metrics").then((r) => r.data),
   });
@@ -62,6 +68,13 @@ export default function AdsPage() {
     onError: () => toast("Failed to add metrics", "error"),
   });
 
+  const totalPages = Math.max(1, Math.ceil(metrics.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const visibleMetrics = useMemo(
+    () => metrics.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [metrics, safePage]
+  );
+
   const totals = metrics.reduce(
     (acc, m) => ({
       spend: acc.spend + m.spend,
@@ -76,6 +89,11 @@ export default function AdsPage() {
 
   return (
     <div className="space-y-6">
+      {metricsError && (
+        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
+          Failed to load ad metrics — try refreshing.
+        </p>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Ad Performance</h1>
@@ -105,7 +123,7 @@ export default function AdsPage() {
         </div>
         {metrics.length === 0 ? (
           <div className="px-5 py-12 text-center">
-            <TrendingUp className="w-8 h-8 text-gray-700 mx-auto mb-3" />
+            <TrendingUp className="w-8 h-8 text-gray-700 mx-auto mb-3" aria-hidden="true" />
             <p className="text-sm text-gray-500">No ad data yet</p>
             <p className="text-xs text-gray-600 mt-1">Click "Add Entry" to manually log metrics</p>
             <button
@@ -125,15 +143,11 @@ export default function AdsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {metrics.map((m) => (
+              {visibleMetrics.map((m) => (
                 <tr key={m.id} className="hover:bg-gray-800/50">
                   <td className="px-4 py-3 text-sm text-white">{m.adAccount.client.name}</td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      m.adAccount.platform === "META" ? "bg-blue-500/20 text-blue-400" :
-                      m.adAccount.platform === "GOOGLE" ? "bg-green-500/20 text-green-400" :
-                      "bg-red-500/20 text-red-400"
-                    }`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLATFORM_COLOR[m.adAccount.platform] ?? PLATFORM_COLOR.OTHER}`}>
                       {m.adAccount.platform}
                     </span>
                   </td>
@@ -151,15 +165,43 @@ export default function AdsPage() {
             </tbody>
           </table>
         )}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-800">
+            <p className="text-xs text-gray-500">
+              Showing {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, metrics.length)} of {metrics.length} entries
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                aria-label="Previous page"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+              </button>
+              <span className="text-xs text-gray-400 px-2" aria-live="polite">{safePage} / {totalPages}</span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                aria-label="Next page"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Manual entry modal */}
       {adding && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="add-metrics-title">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-800">
-              <h2 className="text-lg font-semibold text-white">Add Ad Metrics</h2>
-              <button onClick={() => setAdding(false)} className="text-gray-400 hover:text-white">✕</button>
+              <h2 id="add-metrics-title" className="text-lg font-semibold text-white">Add Ad Metrics</h2>
+              <button type="button" onClick={() => setAdding(false)} aria-label="Close" className="text-gray-400 hover:text-white">✕</button>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -227,8 +269,9 @@ export default function AdsPage() {
               </div>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
-              <button onClick={() => setAdding(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
+              <button type="button" onClick={() => setAdding(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
               <button
+                type="button"
                 onClick={() => addMetric.mutate()}
                 disabled={!form.clientId || addMetric.isPending}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"

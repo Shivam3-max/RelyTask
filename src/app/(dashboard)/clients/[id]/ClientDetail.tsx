@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import Link from "next/link";
@@ -11,6 +10,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate, isOverdue } from "@/lib/utils";
+import { ImageUpload } from "@/components/ui/ImageUpload";
+import { PROJECT_STATUS_COLOR, PLATFORM_COLOR } from "@/lib/constants";
 
 type AdMetric = { id: string; spend: number; impressions: number; clicks: number; conversions: number; date: string };
 type AdAccount = { id: string; platform: string; accountId?: string; metrics: AdMetric[] };
@@ -21,27 +22,13 @@ type Project = {
 };
 type Client = {
   id: string; name: string; companyName?: string; email?: string;
-  phone?: string; website?: string; notes?: string;
+  phone?: string; logo?: string | null; website?: string; notes?: string;
   projects: Project[];
   adAccounts: AdAccount[];
 };
 
-const PROJECT_STATUS_COLOR: Record<string, string> = {
-  ACTIVE: "bg-green-500/20 text-green-400",
-  ON_HOLD: "bg-yellow-500/20 text-yellow-400",
-  COMPLETED: "bg-blue-500/20 text-blue-400",
-  CANCELLED: "bg-red-500/20 text-red-400",
-};
-
-const PLATFORM_COLOR: Record<string, string> = {
-  META: "bg-blue-500/20 text-blue-400",
-  GOOGLE: "bg-green-500/20 text-green-400",
-  YOUTUBE: "bg-red-500/20 text-red-400",
-  OTHER: "bg-gray-700 text-gray-400",
-};
 
 export function ClientDetail({ client }: { client: Client }) {
-  const router = useRouter();
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
@@ -49,6 +36,7 @@ export function ClientDetail({ client }: { client: Client }) {
     companyName: client.companyName ?? "",
     email: client.email ?? "",
     phone: client.phone ?? "",
+    logo: client.logo ?? "",
     website: client.website ?? "",
     notes: client.notes ?? "",
   });
@@ -77,20 +65,34 @@ export function ClientDetail({ client }: { client: Client }) {
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Back */}
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+      <Link
+        href="/clients"
+        className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
       >
-        <ArrowLeft className="w-4 h-4" /> Back to Clients
-      </button>
+        <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back to Clients
+      </Link>
 
       {/* Header */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-2xl font-bold text-indigo-400 shrink-0">
-              {client.name.charAt(0).toUpperCase()}
-            </div>
+            {editing ? (
+              <ImageUpload
+                currentUrl={form.logo || null}
+                uploadType="logo"
+                entityId={client.id}
+                onUploaded={(url) => setForm({ ...form, logo: url })}
+                shape="square"
+                fallbackLabel={client.name}
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-2xl font-bold text-indigo-400 shrink-0 overflow-hidden">
+                {client.logo
+                  ? <img src={client.logo} alt={client.name} className="w-full h-full object-cover" />
+                  : client.name.charAt(0).toUpperCase()
+                }
+              </div>
+            )}
             <div>
               {editing ? (
                 <input
@@ -117,25 +119,29 @@ export function ClientDetail({ client }: { client: Client }) {
             {editing ? (
               <>
                 <button
+                  type="button"
                   onClick={() => save.mutate()}
                   disabled={save.isPending}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm rounded-lg transition-colors"
                 >
-                  <Save className="w-3.5 h-3.5" /> {save.isPending ? "Saving..." : "Save"}
+                  <Save className="w-3.5 h-3.5" aria-hidden="true" /> {save.isPending ? "Saving..." : "Save"}
                 </button>
                 <button
+                  type="button"
                   onClick={() => setEditing(false)}
+                  aria-label="Cancel editing"
                   className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </button>
               </>
             ) : (
               <button
+                type="button"
                 onClick={() => setEditing(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg transition-colors"
               >
-                <Pencil className="w-3.5 h-3.5" /> Edit
+                <Pencil className="w-3.5 h-3.5" aria-hidden="true" /> Edit
               </button>
             )}
           </div>
@@ -147,17 +153,17 @@ export function ClientDetail({ client }: { client: Client }) {
             <>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Email</label>
-                <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
+                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="email@client.com" />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Phone</label>
-                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="+91 98765 43210" />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Website</label>
-                <input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })}
+                <input type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="https://..." />
               </div>
               <div>
@@ -170,19 +176,19 @@ export function ClientDetail({ client }: { client: Client }) {
             <>
               {client.email && (
                 <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Mail className="w-4 h-4 shrink-0 text-gray-600" />
+                  <Mail className="w-4 h-4 shrink-0 text-gray-600" aria-hidden="true" />
                   <a href={`mailto:${client.email}`} className="hover:text-white truncate">{client.email}</a>
                 </div>
               )}
               {client.phone && (
                 <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Phone className="w-4 h-4 shrink-0 text-gray-600" />
+                  <Phone className="w-4 h-4 shrink-0 text-gray-600" aria-hidden="true" />
                   {client.phone}
                 </div>
               )}
               {client.website && (
                 <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Globe className="w-4 h-4 shrink-0 text-gray-600" />
+                  <Globe className="w-4 h-4 shrink-0 text-gray-600" aria-hidden="true" />
                   <a href={client.website} target="_blank" rel="noopener noreferrer" className="hover:text-white truncate">{client.website}</a>
                 </div>
               )}

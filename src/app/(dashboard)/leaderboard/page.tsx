@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Trophy, Target, CheckCircle, Clock, Zap } from "lucide-react";
+import { usePageTitle } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 
 type Leader = {
@@ -27,26 +28,31 @@ const ROLE_COLOR: Record<string, string> = {
 };
 
 export default function LeaderboardPage() {
-  const { data: leaders = [], isLoading } = useQuery<Leader[]>({
+  usePageTitle("Leaderboard");
+  const { data: leaders = [], isLoading, isError } = useQuery<Leader[]>({
     queryKey: ["leaderboard"],
     queryFn: () => axios.get("/api/leaderboard").then((r) => r.data),
   });
-
-  const top = leaders[0];
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
-          <Trophy className="w-6 h-6 text-yellow-400" />
+          <Trophy className="w-6 h-6 text-yellow-400" aria-hidden="true" />
           Performance Leaderboard
         </h1>
         <p className="text-sm text-gray-400 mt-1">Team ranking based on tasks completed in the last 30 days</p>
       </div>
 
+      {isError && (
+        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
+          Failed to load leaderboard — try refreshing.
+        </p>
+      )}
+
       {isLoading && (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="flex items-center justify-center py-16" role="status" aria-label="Loading leaderboard">
+          <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
         </div>
       )}
 
@@ -102,7 +108,7 @@ export default function LeaderboardPage() {
       {/* Full leaderboard table */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-800 flex items-center gap-2">
-          <Zap className="w-4 h-4 text-indigo-400" />
+          <Zap className="w-4 h-4 text-indigo-400" aria-hidden="true" />
           <h3 className="text-sm font-semibold text-white">Full Rankings</h3>
           <span className="text-xs text-gray-500">· Score = Completed×10 + Urgent×5 + On-time×3</span>
         </div>
@@ -180,7 +186,7 @@ export default function LeaderboardPage() {
       {/* SOP Compliance panel */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
         <div className="flex items-center gap-2 mb-4">
-          <CheckCircle className="w-4 h-4 text-green-400" />
+          <CheckCircle className="w-4 h-4 text-green-400" aria-hidden="true" />
           <h3 className="text-sm font-semibold text-white">SOP Compliance Tracking</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -216,10 +222,10 @@ export default function LeaderboardPage() {
       {/* Scoring legend */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { icon: <Trophy className="w-4 h-4 text-yellow-400"/>, label: "Task completed", pts: "+10 pts" },
-          { icon: <Zap className="w-4 h-4 text-red-400"/>, label: "Urgent task done", pts: "+5 pts" },
-          { icon: <Clock className="w-4 h-4 text-green-400"/>, label: "Completed on time", pts: "+3 pts" },
-          { icon: <Target className="w-4 h-4 text-indigo-400"/>, label: "SOP checklist", pts: "% tracked" },
+          { icon: <Trophy className="w-4 h-4 text-yellow-400" aria-hidden="true"/>, label: "Task completed", pts: "+10 pts" },
+          { icon: <Zap className="w-4 h-4 text-red-400" aria-hidden="true"/>, label: "Urgent task done", pts: "+5 pts" },
+          { icon: <Clock className="w-4 h-4 text-green-400" aria-hidden="true"/>, label: "Completed on time", pts: "+3 pts" },
+          { icon: <Target className="w-4 h-4 text-indigo-400" aria-hidden="true"/>, label: "SOP checklist", pts: "% tracked" },
         ].map(({ icon, label, pts }) => (
           <div key={label} className="bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-center gap-3">
             {icon}

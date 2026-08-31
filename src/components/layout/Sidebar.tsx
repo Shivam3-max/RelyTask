@@ -12,37 +12,55 @@ import {
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalSearch } from "./GlobalSearch";
+import { hasPermission } from "@/lib/permissions";
 
 const navItems = [
   { href: "/dashboard",  label: "Dashboard",   icon: LayoutDashboard },
-  { href: "/clients",    label: "Clients",      icon: UserCircle },
+  // Clients/Ad Tracker/SOP Builder are dedicated management pages (contact
+  // info, ad account tokens, SOP content) gated by their own module — unlike
+  // Projects/Team, nothing else in the app needs their list data, so hiding
+  // the link and closing the underlying API to the same permission is safe.
+  { href: "/clients",    label: "Clients",      icon: UserCircle, permission: ["clients", "read"] as const },
+  // Projects/Team stay visible to everyone signed in: the Tasks board (every
+  // role) reads /api/projects and /api/users as shared name-lookup data for
+  // its filters, so gating the page without splitting that endpoint would
+  // just hide the link while leaving the same data reachable underneath.
   { href: "/projects",   label: "Projects",     icon: FolderOpen },
   { href: "/tasks",      label: "Tasks",        icon: CheckSquare },
   { href: "/calendar",   label: "Calendar",     icon: Calendar },
-  { href: "/sops",       label: "SOP Builder",  icon: BookOpen },
+  { href: "/sops",       label: "SOP Builder",  icon: BookOpen, permission: ["sops", "read"] as const },
   { href: "/team",       label: "Team",         icon: Users },
   { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
-  { href: "/capacity",   label: "Capacity",     icon: CalendarDays },
-  { href: "/ads",        label: "Ad Tracker",   icon: BarChart3 },
+  // Capacity shows every team member's workload — that's a "view all", not "view own", concern.
+  { href: "/capacity",   label: "Capacity",     icon: CalendarDays, requiresReadAll: true },
+  { href: "/ads",        label: "Ad Tracker",   icon: BarChart3, permission: ["ads", "read"] as const },
   { href: "/roles",      label: "Roles",        icon: Shield, adminOnly: true },
   { href: "/settings",   label: "Settings",     icon: Settings },
 ];
 
-export function Sidebar() {
-  const pathname = usePathname();
-  const { data: session } = useSession();
-  const isAdmin = session?.user.role === "master_admin";
-  const [mobileOpen, setMobileOpen] = useState(false);
+interface SidebarContentProps {
+  pathname: string;
+  session: ReturnType<typeof useSession>["data"];
+  isAdmin: boolean;
+  canViewAllTasks: boolean;
+  onNavClick: () => void;
+}
 
-  const items = navItems.filter((i) => !i.adminOnly || isAdmin);
+function SidebarContent({ pathname, session, isAdmin, canViewAllTasks, onNavClick }: SidebarContentProps) {
+  const items = navItems.filter(
+    (i) =>
+      (!i.adminOnly || isAdmin) &&
+      (!i.requiresReadAll || canViewAllTasks) &&
+      (!i.permission || (!!session && hasPermission(session, i.permission[0], i.permission[1])))
+  );
 
-  const SidebarContent = () => (
+  return (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center shrink-0">
-            <Megaphone className="w-4 h-4 text-white" />
+            <Megaphone className="w-4 h-4 text-white" aria-hidden="true" />
           </div>
           <div>
             <p className="text-sm font-bold text-white leading-tight">RELYTASK</p>
@@ -51,10 +69,11 @@ export function Sidebar() {
         </div>
         {/* Close on mobile */}
         <button
-          onClick={() => setMobileOpen(false)}
+          onClick={onNavClick}
+          aria-label="Close navigation"
           className="lg:hidden text-gray-400 hover:text-white p-1"
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5" aria-hidden="true" />
         </button>
       </div>
 
@@ -64,14 +83,15 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+      <nav aria-label="Main navigation" className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
         {items.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
               key={href}
               href={href}
-              onClick={() => setMobileOpen(false)}
+              onClick={onNavClick}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                 active
@@ -79,7 +99,7 @@ export function Sidebar() {
                   : "text-gray-400 hover:text-white hover:bg-gray-800"
               )}
             >
-              <Icon className="w-4 h-4 shrink-0" />
+              <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
               {label}
             </Link>
           );
@@ -89,7 +109,7 @@ export function Sidebar() {
       {/* User */}
       <div className="p-3 border-t border-gray-800 shrink-0">
         <div className="flex items-center gap-3 px-3 py-2 mb-1">
-          <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold text-white shrink-0">
+          <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold text-white shrink-0" aria-hidden="true">
             {session?.user.name?.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
@@ -101,15 +121,24 @@ export function Sidebar() {
           <NotificationBell />
         </div>
         <button
+          type="button"
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-all"
         >
-          <LogOut className="w-4 h-4 shrink-0" />
+          <LogOut className="w-4 h-4 shrink-0" aria-hidden="true" />
           Sign out
         </button>
       </div>
     </div>
   );
+}
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const isAdmin = session?.user.role === "master_admin";
+  const canViewAllTasks = !!session && hasPermission(session, "tasks", "read_all");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
@@ -117,7 +146,7 @@ export function Sidebar() {
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-14 bg-gray-900 border-b border-gray-800">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center">
-            <Megaphone className="w-3.5 h-3.5 text-white" />
+            <Megaphone className="w-3.5 h-3.5 text-white" aria-hidden="true" />
           </div>
           <span className="text-sm font-bold text-white">RELYTASK</span>
         </div>
@@ -125,9 +154,12 @@ export function Sidebar() {
           <NotificationBell />
           <button
             onClick={() => setMobileOpen(true)}
+            aria-label="Open navigation"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav-drawer"
             className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-gray-800 transition-colors"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -136,21 +168,38 @@ export function Sidebar() {
       {mobileOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+          aria-hidden="true"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Mobile drawer */}
-      <div className={cn(
-        "lg:hidden fixed top-0 left-0 h-full w-64 bg-gray-900 border-r border-gray-800 z-50 transition-transform duration-300",
-        mobileOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <SidebarContent />
+      <div
+        id="mobile-nav-drawer"
+        aria-hidden={!mobileOpen}
+        className={cn(
+          "lg:hidden fixed top-0 left-0 h-full w-64 bg-gray-900 border-r border-gray-800 z-50 transition-transform duration-300",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <SidebarContent
+          pathname={pathname}
+          session={session}
+          isAdmin={isAdmin}
+          canViewAllTasks={canViewAllTasks}
+          onNavClick={() => setMobileOpen(false)}
+        />
       </div>
 
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-gray-900 border-r border-gray-800 shrink-0">
-        <SidebarContent />
+        <SidebarContent
+          pathname={pathname}
+          session={session}
+          isAdmin={isAdmin}
+          canViewAllTasks={canViewAllTasks}
+          onNavClick={() => {}}
+        />
       </aside>
     </>
   );

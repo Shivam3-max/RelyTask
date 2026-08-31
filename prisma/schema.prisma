@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider  = "mysql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -13,7 +13,7 @@ datasource db {
 model Role {
   id          String       @id @default(cuid())
   name        String       @unique
-  description String?
+  description String?      @db.Text
   isSystem    Boolean      @default(false)
   permissions Permission[]
   users       User[]
@@ -36,7 +36,7 @@ model User {
   email       String    @unique
   password    String
   phone       String?
-  avatar      String?
+  avatar      String?      @db.Text
   roleId      String
   role        Role      @relation(fields: [roleId], references: [id])
   isActive    Boolean   @default(true)
@@ -44,12 +44,13 @@ model User {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  assignedTasks Task[]         @relation("TaskAssignee")
-  createdTasks  Task[]         @relation("TaskCreator")
-  comments      Comment[]
-  notifications Notification[]
-  clientProfile Client?
-  activityLogs  ActivityLog[]
+  assignedTasks       Task[]               @relation("TaskAssignee")
+  createdTasks        Task[]               @relation("TaskCreator")
+  comments            Comment[]
+  notifications       Notification[]
+  clientProfile       Client?
+  activityLogs        ActivityLog[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 // ─── CLIENTS ────────────────────────────────────────────────────────────────
@@ -60,7 +61,7 @@ model Client {
   companyName String?
   email       String
   phone       String?
-  logo        String?
+  logo        String?      @db.Text
   userId      String?     @unique
   user        User?       @relation(fields: [userId], references: [id])
   adAccounts  AdAccount[]
@@ -74,7 +75,7 @@ model Client {
 model Project {
   id          String        @id @default(cuid())
   name        String
-  description String?
+  description String?      @db.Text
   clientId    String
   client      Client        @relation(fields: [clientId], references: [id])
   status      ProjectStatus @default(ACTIVE)
@@ -98,7 +99,7 @@ enum ProjectStatus {
 model Task {
   id           String       @id @default(cuid())
   title        String
-  description  String?
+  description  String?      @db.Text
   projectId    String?
   project      Project?     @relation(fields: [projectId], references: [id])
   assigneeId   String?
@@ -118,10 +119,16 @@ model Task {
   subtasks     Subtask[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([status, dueDate])
+  @@index([creatorId])
 }
 
 enum TaskCategory {
   VIDEO_EDITING
+  CLIENT_VIDEO_RECORDING
   GRAPHIC_DESIGN
   ADS_MANAGEMENT
   SHOOT
@@ -160,7 +167,7 @@ model Subtask {
 model File {
   id         String   @id @default(cuid())
   name       String
-  url        String
+  url        String   @db.Text
   size       Int
   mimeType   String
   taskId     String?
@@ -175,7 +182,7 @@ model File {
 
 model Comment {
   id        String   @id @default(cuid())
-  body      String
+  body      String   @db.Text
   taskId    String
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   authorId  String
@@ -190,7 +197,7 @@ model AdAccount {
   platform    AdPlatform
   accountId   String
   accountName String
-  accessToken String
+  accessToken String   @db.Text
   clientId    String
   client      Client     @relation(fields: [clientId], references: [id])
   metrics     AdMetric[]
@@ -226,11 +233,13 @@ model Notification {
   userId    String
   user      User             @relation(fields: [userId], references: [id])
   title     String
-  body      String
+  body      String   @db.Text
   type      NotificationType
   readAt    DateTime?
   metadata  Json?
   createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
 }
 
 enum NotificationType {
@@ -245,6 +254,20 @@ enum NotificationType {
   SYSTEM
 }
 
+// ─── PASSWORD RESET ─────────────────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
 // ─── ACTIVITY LOG ───────────────────────────────────────────────────────────
 
 model ActivityLog {
@@ -256,6 +279,9 @@ model ActivityLog {
   entityId  String
   metadata  Json?
   createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity, entityId])
 }
 
 // ─── SOP TEMPLATES ──────────────────────────────────────────────────────────
@@ -272,7 +298,7 @@ model SopTemplate {
 model SopStep {
   id          String      @id @default(cuid())
   title       String
-  description String?
+  description String?  @db.Text
   order       Int
   templateId  String
   template    SopTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)

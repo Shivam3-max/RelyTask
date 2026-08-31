@@ -19,7 +19,7 @@ export async function GET() {
       tasks: {
         include: {
           assignee: { select: { name: true } },
-          files: true,
+          files: { select: { id: true, name: true, mimeType: true, size: true, createdAt: true } },
           _count: { select: { comments: true } },
         },
       },

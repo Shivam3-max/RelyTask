@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Plus, GripVertical, Trash2, BookOpen, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, BookOpen, ChevronDown, ChevronRight } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
+import { CATEGORY_LABEL_FULL } from "@/lib/constants";
+import { usePageTitle } from "@/lib/hooks";
 
 type SopStep = { id?: string; title: string; description?: string; order: number };
 type SopTemplate = {
@@ -12,14 +15,9 @@ type SopTemplate = {
   createdAt: string;
 };
 
-const CATEGORY_LABEL: Record<string, string> = {
-  VIDEO_EDITING: "Video Editing", GRAPHIC_DESIGN: "Graphic Design",
-  ADS_MANAGEMENT: "Ads Management", SHOOT: "Shoot", CONTENT_WRITING: "Content Writing",
-  STRATEGY: "Strategy", REPORTING: "Reporting", OTHER: "Other",
-};
-
 const CATEGORY_COLOR: Record<string, string> = {
   VIDEO_EDITING: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+  CLIENT_VIDEO_RECORDING: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
   GRAPHIC_DESIGN: "text-pink-400 bg-pink-500/10 border-pink-500/20",
   ADS_MANAGEMENT: "text-green-400 bg-green-500/10 border-green-500/20",
   SHOOT: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
@@ -30,13 +28,15 @@ const CATEGORY_COLOR: Record<string, string> = {
 };
 
 export default function SopsPage() {
+  usePageTitle("SOP Builder");
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [creating, setCreating] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", category: "VIDEO_EDITING" });
   const [steps, setSteps] = useState<SopStep[]>([{ title: "", description: "", order: 1 }]);
 
-  const { data: sops = [], isLoading } = useQuery<SopTemplate[]>({
+  const { data: sops = [], isLoading, isError } = useQuery<SopTemplate[]>({
     queryKey: ["sops"],
     queryFn: () => axios.get("/api/sops").then((r) => r.data),
   });
@@ -49,7 +49,9 @@ export default function SopsPage() {
       setCreating(false);
       setForm({ name: "", category: "VIDEO_EDITING" });
       setSteps([{ title: "", description: "", order: 1 }]);
+      toast("SOP created", "success");
     },
+    onError: () => toast("Failed to create SOP", "error"),
   });
 
   function addStep() {
@@ -95,30 +97,38 @@ export default function SopsPage() {
       </div>
 
       {isLoading && <p className="text-gray-500 text-sm">Loading...</p>}
+      {isError && (
+        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
+          Failed to load SOPs — try refreshing.
+        </p>
+      )}
 
       {/* SOP cards */}
       <div className="space-y-3">
         {sops.map((sop) => (
           <div key={sop.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
             <button
+              type="button"
               onClick={() => setExpanded(expanded === sop.id ? null : sop.id)}
+              aria-expanded={expanded === sop.id}
+              aria-controls={`sop-${sop.id}`}
               className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-800/50 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <span className={`text-xs px-2.5 py-1 rounded-full border font-medium ${CATEGORY_COLOR[sop.category]}`}>
-                  {CATEGORY_LABEL[sop.category]}
+                  {CATEGORY_LABEL_FULL[sop.category]}
                 </span>
                 <span className="text-sm font-medium text-white">{sop.name}</span>
                 <span className="text-xs text-gray-500">{sop.steps.length} steps</span>
               </div>
               {expanded === sop.id
-                ? <ChevronDown className="w-4 h-4 text-gray-400" />
-                : <ChevronRight className="w-4 h-4 text-gray-400" />
+                ? <ChevronDown className="w-4 h-4 text-gray-400" aria-hidden="true" />
+                : <ChevronRight className="w-4 h-4 text-gray-400" aria-hidden="true" />
               }
             </button>
 
             {expanded === sop.id && (
-              <div className="border-t border-gray-800 px-5 py-4">
+              <div id={`sop-${sop.id}`} className="border-t border-gray-800 px-5 py-4">
                 <ol className="space-y-3">
                   {sop.steps.map((step, i) => (
                     <li key={step.id ?? i} className="flex gap-3">
@@ -150,11 +160,11 @@ export default function SopsPage() {
 
       {/* Create SOP Modal */}
       {creating && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="create-sop-title">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-800">
-              <h2 className="text-lg font-semibold text-white">Create SOP</h2>
-              <button onClick={() => setCreating(false)} className="text-gray-400 hover:text-white">✕</button>
+              <h2 id="create-sop-title" className="text-lg font-semibold text-white">Create SOP</h2>
+              <button type="button" onClick={() => setCreating(false)} aria-label="Close" className="text-gray-400 hover:text-white">✕</button>
             </div>
             <div className="p-6 space-y-5">
               <div className="grid grid-cols-2 gap-4">
@@ -174,7 +184,7 @@ export default function SopsPage() {
                     onChange={(e) => setForm({ ...form, category: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
-                    {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
+                    {Object.entries(CATEGORY_LABEL_FULL).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
                     ))}
                   </select>
@@ -210,8 +220,8 @@ export default function SopsPage() {
                         />
                       </div>
                       {steps.length > 1 && (
-                        <button onClick={() => removeStep(i)} className="text-gray-600 hover:text-red-400 mt-2 transition-colors">
-                          <Trash2 className="w-3.5 h-3.5" />
+                        <button type="button" onClick={() => removeStep(i)} aria-label={`Remove step ${i + 1}`} className="text-gray-600 hover:text-red-400 mt-2 transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                         </button>
                       )}
                     </div>
@@ -220,8 +230,9 @@ export default function SopsPage() {
               </div>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
-              <button onClick={() => setCreating(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
+              <button type="button" onClick={() => setCreating(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
               <button
+                type="button"
                 onClick={() => create.mutate({ ...form, steps })}
                 disabled={!form.name || steps.some((s) => !s.title) || create.isPending}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"

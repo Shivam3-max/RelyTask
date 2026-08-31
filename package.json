@@ -4,14 +4,19 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build && npm run db:deploy",
     "start": "next start",
+    "postinstall": "prisma generate",
     "lint": "eslint",
-    "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",
-    "db:setup": "npx prisma migrate dev --name init && npm run db:seed"
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "ts-node --compiler-options \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/seed.ts",
+    "db:deploy": "prisma migrate deploy && npm run db:seed",
+    "db:setup": "npx prisma migrate dev --name init && npm run db:seed",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+    "seed": "ts-node --compiler-options \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/seed.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
@@ -27,8 +32,8 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.21.0",
-    "next": "16.2.9",
-    "next-auth": "^4.24.11",
+    "next": "^16.2.9",
+    "next-auth": "^4.24.15",
     "nodemailer": "^7.0.13",
     "prisma": "^6.19.3",
     "react": "19.2.4",
@@ -36,10 +41,13 @@
     "recharts": "^3.8.1",
     "tailwind-merge": "^3.6.0",
     "twilio": "^6.0.2",
+    "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
+    "dotenv": "^16.6.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

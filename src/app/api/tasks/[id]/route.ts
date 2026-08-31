@@ -3,6 +3,20 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendNotification } from "@/lib/notifications";
+import { logActivity } from "@/lib/activityLog";
+import { optionalCuid, optionalDateString } from "@/lib/validation";
+import { getTaskReadAccess, hasPermission, isTaskOwner } from "@/lib/permissions";
+import { z } from "zod";
+
+const patchTaskSchema = z.object({
+  status: z.enum(["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"]).optional(),
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).optional(),
+  assigneeId: optionalCuid(),
+  dueDate: optionalDateString(),
+  recurrence: z.enum(["NONE", "DAILY", "WEEKLY", "MONTHLY"]).optional().nullable(),
+});
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
@@ -20,24 +34,49 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
         include: { author: { select: { id: true, name: true } } },
         orderBy: { createdAt: "asc" },
       },
+      files: {
+        select: { id: true, name: true, size: true, mimeType: true, uploadedBy: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+      },
       _count: { select: { comments: true, files: true, subtasks: true } },
     },
   });
 
   if (!task) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const { canReadAll } = getTaskReadAccess(session);
+  if (!canReadAll && !isTaskOwner(session.user.id, task)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   return NextResponse.json(task);
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasPermission(session, "tasks", "update")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
-  const body = await req.json();
-  const { status, title, description, priority, assigneeId, dueDate, recurrence } = body;
+  const parsed = patchTaskSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Validation failed", issues: parsed.error.flatten().fieldErrors },
+      { status: 422 }
+    );
+  }
+
+  const { status, title, description, priority, assigneeId, dueDate, recurrence } = parsed.data;
 
   const existing = await prisma.task.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const { canReadAll } = getTaskReadAccess(session);
+  if (!canReadAll && !isTaskOwner(session.user.id, existing)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
   const data: Record<string, unknown> = {};
   if (status !== undefined) {
@@ -61,6 +100,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       subtasks: true,
       _count: { select: { comments: true, files: true, subtasks: true } },
     },
+  });
+
+  await logActivity({
+    userId: session.user.id,
+    action: "update",
+    entity: "task",
+    entityId: id,
+    metadata: { fields: Object.keys(data) },
   });
 
   // Notify new assignee
@@ -91,8 +138,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasPermission(session, "tasks", "delete")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
+
+  const task = await prisma.task.findUnique({ where: { id }, select: { assigneeId: true, creatorId: true } });
+  if (!task) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const { canReadAll } = getTaskReadAccess(session);
+  if (!canReadAll && !isTaskOwner(session.user.id, task)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   await prisma.task.delete({ where: { id } });
+
+  await logActivity({ userId: session.user.id, action: "delete", entity: "task", entityId: id });
+
   return NextResponse.json({ success: true });
 }

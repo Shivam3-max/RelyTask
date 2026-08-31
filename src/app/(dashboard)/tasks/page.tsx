@@ -1,11 +1,19 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
+import { usePageTitle } from "@/lib/hooks";
 import axios from "axios";
-import { Plus, AlertTriangle, ChevronDown, Filter } from "lucide-react";
+import { Plus, AlertTriangle, Filter } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate, isOverdue } from "@/lib/utils";
+import { hasPermission } from "@/lib/permissions";
+import {
+  STATUS_COLS, STATUS_OPTIONS, STATUS_LABEL,
+  PRIORITY_DOT, CATEGORY_LABEL, RECURRENCE_ICON,
+} from "@/lib/constants";
 import {
   DndContext, DragEndEvent, DragOverlay, DragStartEvent,
   PointerSensor, useSensor, useSensors, closestCorners,
@@ -30,34 +38,6 @@ type Task = {
   _count: { comments: number; files: number; subtasks: number };
 };
 
-const STATUS_COLS = [
-  { key: "TODO", label: "To Do", color: "border-gray-600" },
-  { key: "IN_PROGRESS", label: "In Progress", color: "border-blue-500" },
-  { key: "IN_REVIEW", label: "In Review", color: "border-yellow-500" },
-  { key: "CLIENT_APPROVAL", label: "Client Approval", color: "border-purple-500" },
-  { key: "REVISION", label: "Revision", color: "border-orange-500" },
-  { key: "DONE", label: "Done", color: "border-green-500" },
-];
-
-const STATUS_OPTIONS = ["TODO","IN_PROGRESS","IN_REVIEW","CLIENT_APPROVAL","REVISION","DONE"];
-const STATUS_LABEL: Record<string,string> = {
-  TODO:"To Do",IN_PROGRESS:"In Progress",IN_REVIEW:"In Review",
-  CLIENT_APPROVAL:"Client Approval",REVISION:"Revision",DONE:"Done"
-};
-
-const PRIORITY_DOT: Record<string, string> = {
-  LOW: "bg-gray-500", MEDIUM: "bg-blue-500", HIGH: "bg-orange-500", URGENT: "bg-red-500",
-};
-
-const CATEGORY_LABEL: Record<string, string> = {
-  VIDEO_EDITING: "Video", GRAPHIC_DESIGN: "Design", ADS_MANAGEMENT: "Ads",
-  SHOOT: "Shoot", CONTENT_WRITING: "Content", STRATEGY: "Strategy",
-  REPORTING: "Reports", OTHER: "Other",
-};
-
-const RECURRENCE_ICON: Record<string, string> = {
-  DAILY: "↻D", WEEKLY: "↻W", MONTHLY: "↻M",
-};
 
 // Draggable task card
 function TaskCard({ task, onOpen, onStatusChange }: {
@@ -80,6 +60,7 @@ function TaskCard({ task, onOpen, onStatusChange }: {
       <div
         className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors cursor-pointer"
         onClick={() => onOpen(task.id)}
+        aria-label={`${task.title} — drag to move between columns`}
         {...attributes}
         {...listeners}
       >
@@ -153,11 +134,15 @@ function TaskCard({ task, onOpen, onStatusChange }: {
 }
 
 export default function TasksPage() {
+  usePageTitle("Tasks");
+  const { data: session } = useSession();
+  const canCreateTask = !!session && hasPermission(session, "tasks", "create");
   const qc = useQueryClient();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [view, setView] = useState<"board" | "list">("board");
   const [creating, setCreating] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(searchParams.get("task"));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filterPriority, setFilterPriority] = useState("");
   const [filterAssignee, setFilterAssignee] = useState("");
@@ -202,8 +187,19 @@ export default function TasksPage() {
   const updateStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       axios.patch(`/api/tasks/${id}`, { status }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
-    onError: () => toast("Failed to update status", "error"),
+    onMutate: async ({ id, status }) => {
+      await qc.cancelQueries({ queryKey: ["tasks"] });
+      const prev = qc.getQueryData<Task[]>(["tasks"]);
+      qc.setQueryData<Task[]>(["tasks"], (old) =>
+        old?.map((t) => (t.id === id ? { ...t, status } : t)) ?? []
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["tasks"], ctx.prev);
+      toast("Failed to update status", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
   });
 
   function handleDragStart(event: DragStartEvent) {
@@ -216,7 +212,7 @@ export default function TasksPage() {
     if (!over) return;
     // over.id is the column key when dropped on a column
     const newStatus = over.id as string;
-    if (STATUS_OPTIONS.includes(newStatus)) {
+    if ((STATUS_OPTIONS as readonly string[]).includes(newStatus)) {
       const task = tasks.find((t) => t.id === active.id);
       if (task && task.status !== newStatus) {
         updateStatus.mutate({ id: active.id as string, status: newStatus });
@@ -248,13 +244,15 @@ export default function TasksPage() {
             <button onClick={() => setView("board")} className={`px-3 py-1 text-xs rounded-md transition-colors ${view === "board" ? "bg-gray-700 text-white" : "text-gray-400"}`}>Board</button>
             <button onClick={() => setView("list")} className={`px-3 py-1 text-xs rounded-md transition-colors ${view === "list" ? "bg-gray-700 text-white" : "text-gray-400"}`}>List</button>
           </div>
-          <button
-            onClick={() => setCreating(true)}
-            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">New Task</span>
-          </button>
+          {canCreateTask && (
+            <button
+              onClick={() => setCreating(true)}
+              className="flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">New Task</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -344,7 +342,7 @@ export default function TasksPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {tasks.map((task) => (
+              {filteredTasks.map((task) => (
                 <tr key={task.id} onClick={() => setSelectedTaskId(task.id)} className="hover:bg-gray-800/50 transition-colors cursor-pointer">
                   <td className="px-5 py-3">
                     <p className="text-sm text-white">{task.title}</p>
@@ -380,11 +378,11 @@ export default function TasksPage() {
 
       {/* Create task modal */}
       {creating && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="create-task-title">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-gray-800 shrink-0">
-              <h2 className="text-lg font-semibold text-white">Create Task</h2>
-              <button onClick={() => setCreating(false)} className="text-gray-400 hover:text-white">✕</button>
+              <h2 id="create-task-title" className="text-lg font-semibold text-white">Create Task</h2>
+              <button type="button" onClick={() => setCreating(false)} aria-label="Close" className="text-gray-400 hover:text-white">✕</button>
             </div>
             <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
@@ -460,8 +458,8 @@ export default function TasksPage() {
                       className="flex-1 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder={`Step ${i + 1}`} />
                     {form.subtasks.length > 1 && (
-                      <button onClick={() => setForm({ ...form, subtasks: form.subtasks.filter((_, j) => j !== i) })}
-                        className="text-gray-500 hover:text-red-400 px-2">✕</button>
+                      <button type="button" onClick={() => setForm({ ...form, subtasks: form.subtasks.filter((_, j) => j !== i) })}
+                        aria-label={`Remove step ${i + 1}`} className="text-gray-500 hover:text-red-400 px-2">✕</button>
                     )}
                   </div>
                 ))}

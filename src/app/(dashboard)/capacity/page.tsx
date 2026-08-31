@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CalendarDays, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { getAvatarColor } from "@/lib/constants";
+import { hasPermission } from "@/lib/permissions";
+
+export const metadata: Metadata = { title: "Team Capacity" };
 
 function getDaysFromNow(n: number) {
   const d = new Date();
@@ -45,14 +51,11 @@ const LOAD_CONFIG = {
   overloaded: { label: "Overloaded", color: "text-red-400",    bg: "bg-red-500/10 border-red-500/20",     dot: "bg-red-400" },
 };
 
-const AVATAR_COLORS = [
-  "bg-indigo-500", "bg-pink-500", "bg-green-500", "bg-yellow-500",
-  "bg-blue-500", "bg-purple-500", "bg-orange-500",
-];
-
 export default async function CapacityPage() {
   const session = await getServerSession(authOptions);
   if (!session) return null;
+  // Every team member's workload, org-wide — a "view all" concern, not "view own".
+  if (!hasPermission(session, "tasks", "read_all")) redirect("/dashboard");
 
   const users = await getCapacityData();
   const overloaded = users.filter((u) => u.load === "overloaded").length;
@@ -70,7 +73,7 @@ export default async function CapacityPage() {
         <div className="space-y-2">
           {overloaded > 0 && (
             <div className="flex items-center gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" aria-hidden="true" />
               <p className="text-sm text-red-300">
                 <span className="font-semibold">{overloaded} team member{overloaded > 1 ? "s" : ""}</span>{" "}
                 overloaded (8+ active tasks). Consider redistributing.
@@ -79,7 +82,7 @@ export default async function CapacityPage() {
           )}
           {withOverdue > 0 && (
             <div className="flex items-center gap-3 px-4 py-3 bg-orange-500/10 border border-orange-500/20 rounded-xl">
-              <Clock className="w-4 h-4 text-orange-400 shrink-0" />
+              <Clock className="w-4 h-4 text-orange-400 shrink-0" aria-hidden="true" />
               <p className="text-sm text-orange-300">
                 <span className="font-semibold">{withOverdue} member{withOverdue > 1 ? "s" : ""}</span>{" "}
                 have overdue tasks that need attention.
@@ -93,7 +96,7 @@ export default async function CapacityPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {users.map((user) => {
           const cfg = LOAD_CONFIG[user.load as keyof typeof LOAD_CONFIG];
-          const avatarColor = AVATAR_COLORS[user.name.charCodeAt(0) % AVATAR_COLORS.length];
+          const avatarColor = getAvatarColor(user.name);
           const barWidth = Math.min((user.totalActive / 10) * 100, 100);
 
           return (
@@ -167,7 +170,7 @@ export default async function CapacityPage() {
 
               {user.totalActive === 0 && (
                 <div className="flex items-center gap-2 text-xs text-green-400">
-                  <CheckCircle className="w-3.5 h-3.5" />
+                  <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
                   Available for new tasks
                 </div>
               )}

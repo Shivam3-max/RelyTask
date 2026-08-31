@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+
+export const metadata: Metadata = {
+  title: {
+    template: "%s | RELYTASK",
+    default: "Dashboard | RELYTASK",
+  },
+};
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -10,8 +18,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex h-screen overflow-hidden">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:text-sm focus:font-medium focus:rounded-lg focus:outline-none"
+      >
+        Skip to main content
+      </a>
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-gray-950">
+      <main id="main-content" className="flex-1 overflow-y-auto bg-gray-950" tabIndex={-1}>
         <div className="pt-14 lg:pt-0 p-4 md:p-6 max-w-7xl mx-auto">
           <Breadcrumbs />
           {children}

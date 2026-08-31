@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { usePageTitle } from "@/lib/hooks";
 import axios from "axios";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CATEGORY_LABEL, PRIORITY_DOT } from "@/lib/constants";
 
 type Task = {
   id: string;
@@ -29,27 +31,29 @@ const STATUS_DOT: Record<string, string> = {
   CLIENT_APPROVAL: "bg-purple-500", REVISION: "bg-orange-500", DONE: "bg-green-500",
 };
 
-const CATEGORY_LABEL: Record<string, string> = {
-  VIDEO_EDITING: "Video", GRAPHIC_DESIGN: "Design", ADS_MANAGEMENT: "Ads",
-  SHOOT: "Shoot", CONTENT_WRITING: "Content", STRATEGY: "Strategy",
-  REPORTING: "Reports", OTHER: "Other",
-};
-
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 export default function CalendarPage() {
+  usePageTitle("Calendar");
   const today = new Date();
   const [current, setCurrent] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
-  const { data: tasks = [] } = useQuery<Task[]>({
-    queryKey: ["tasks"],
-    queryFn: () => axios.get("/api/tasks").then((r) => r.data),
-  });
-
   const year = current.getFullYear();
   const month = current.getMonth();
+
+  const startOfMonth = new Date(year, month, 1).toISOString();
+  const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+
+  const { data: tasks = [], isError } = useQuery<Task[]>({
+    queryKey: ["tasks-calendar", year, month],
+    queryFn: () =>
+      axios
+        .get("/api/tasks", { params: { startDate: startOfMonth, endDate: endOfMonth } })
+        .then((r) => r.data),
+  });
+
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
@@ -88,20 +92,25 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-6">
+      {isError && (
+        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
+          Failed to load tasks — try refreshing the page.
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-white">Content Calendar</h1>
           <p className="text-sm text-gray-400 mt-1">Task deadlines across all projects</p>
         </div>
         <div className="flex items-center gap-1 bg-gray-900 border border-gray-800 rounded-xl px-1 py-1">
-          <button onClick={prevMonth} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
-            <ChevronLeft className="w-4 h-4" />
+          <button type="button" onClick={prevMonth} aria-label="Previous month" className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+            <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </button>
-          <span className="text-sm font-semibold text-white px-3 min-w-[140px] text-center">
+          <span className="text-sm font-semibold text-white px-3 min-w-[140px] text-center" aria-live="polite" aria-atomic="true">
             {MONTHS[month]} {year}
           </span>
-          <button onClick={nextMonth} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
-            <ChevronRight className="w-4 h-4" />
+          <button type="button" onClick={nextMonth} aria-label="Next month" className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+            <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -122,15 +131,18 @@ export default function CalendarPage() {
           <div className="grid grid-cols-7">
             {cells.map((cell, idx) => {
               const dayTasks = cell.curr ? (tasksByDay[cell.day] ?? []) : [];
-              const hasOverdue = dayTasks.some((t) => t.status !== "DONE");
-              const allDone = dayTasks.length > 0 && dayTasks.every((t) => t.status === "DONE");
               return (
                 <div
                   key={idx}
+                  role={cell.curr && dayTasks.length > 0 ? "button" : undefined}
+                  tabIndex={cell.curr && dayTasks.length > 0 ? 0 : undefined}
+                  aria-pressed={cell.curr && dayTasks.length > 0 ? selectedDay === cell.day : undefined}
+                  aria-label={cell.curr && dayTasks.length > 0 ? `${MONTHS[month]} ${cell.day}, ${dayTasks.length} task${dayTasks.length !== 1 ? "s" : ""}` : undefined}
                   onClick={() => cell.curr && dayTasks.length > 0 && setSelectedDay(cell.day === selectedDay ? null : cell.day)}
+                  onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && cell.curr && dayTasks.length > 0) { e.preventDefault(); setSelectedDay(cell.day === selectedDay ? null : cell.day); } }}
                   className={cn(
                     "border-b border-r border-gray-800 p-2 min-h-[70px] md:min-h-[90px] transition-colors",
-                    cell.curr ? "cursor-pointer hover:bg-gray-800/50" : "opacity-30",
+                    cell.curr && dayTasks.length > 0 ? "cursor-pointer hover:bg-gray-800/50" : cell.curr ? "" : "opacity-30",
                     selectedDay === cell.day && cell.curr && "bg-indigo-500/10",
                   )}
                 >
@@ -199,7 +211,7 @@ export default function CalendarPage() {
             </>
           ) : (
             <div className="flex flex-col items-center justify-center h-full py-12 text-center">
-              <Calendar className="w-8 h-8 text-gray-700 mb-3" />
+              <Calendar className="w-8 h-8 text-gray-700 mb-3" aria-hidden="true" />
               <p className="text-sm text-gray-500">Click a date to see tasks</p>
               <p className="text-xs text-gray-600 mt-1">
                 {Object.values(tasksByDay).flat().length} tasks this month

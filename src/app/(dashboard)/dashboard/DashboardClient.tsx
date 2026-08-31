@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
@@ -9,6 +10,7 @@ import {
   UserCircle, TrendingUp, Clock, Zap, ArrowUp, ArrowDown,
 } from "lucide-react";
 import { formatDate, isOverdue } from "@/lib/utils";
+import { ADMIN_ROLES, CATEGORY_LABEL, PRIORITY_DOT } from "@/lib/constants";
 
 const STATUS_COLORS: Record<string, string> = {
   TODO: "bg-gray-700 text-gray-300",
@@ -19,15 +21,6 @@ const STATUS_COLORS: Record<string, string> = {
   DONE: "bg-green-500/20 text-green-400",
 };
 
-const CATEGORY_LABEL: Record<string, string> = {
-  VIDEO_EDITING: "Video", GRAPHIC_DESIGN: "Design", ADS_MANAGEMENT: "Ads",
-  SHOOT: "Shoot", CONTENT_WRITING: "Content", STRATEGY: "Strategy",
-  REPORTING: "Reports", OTHER: "Other",
-};
-
-const PRIORITY_DOT: Record<string, string> = {
-  LOW: "bg-gray-500", MEDIUM: "bg-blue-500", HIGH: "bg-orange-500", URGENT: "bg-red-500",
-};
 
 const BAR_COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f97316", "#eab308", "#22c55e"];
 
@@ -38,23 +31,52 @@ function getTimeOfDay() {
   return "evening";
 }
 
+type RecentTask = {
+  id: string;
+  title: string;
+  status: string;
+  category: string;
+  priority: string;
+  dueDate?: string | null;
+  updatedAt: string;
+  assignee?: { id: string; name: string } | null;
+  project?: { name: string; client: { name: string } } | null;
+};
+
+type ClientSummary = {
+  id: string;
+  name: string;
+  projects: { status: string }[];
+};
+
 type Props = {
   data: {
-    stats: { totalTasks: number; doneTasks: number; overdueTasks: number; activeProjects: number; teamCount: number; clientCount: number };
+    stats: { totalTasks: number; doneTasks: number; overdueTasks: number; activeProjects: number; teamCount: number; clientCount: number | null };
     completionTrend: { day: string; completed: number; created: number }[];
     statusBreakdown: { name: string; value: number; color: string }[];
     categoryBreakdown: { name: string; value: number }[];
     teamWorkload: { name: string; tasks: number; role: string }[];
-    recentTasks: any[];
-    clients: any[];
+    recentTasks: RecentTask[];
+    clients: ClientSummary[];
   };
   user: { name: string; role: string };
 };
 
 export function DashboardClient({ data, user }: Props) {
-  const { stats, completionTrend, statusBreakdown, categoryBreakdown, teamWorkload, recentTasks } = data;
+  const { stats, completionTrend, statusBreakdown, categoryBreakdown, teamWorkload, recentTasks, clients } = data;
   const completion = stats.totalTasks ? Math.round((stats.doneTasks / stats.totalTasks) * 100) : 0;
-  const isAdmin = ["master_admin", "project_manager"].includes(user.role);
+  const isAdmin = (ADMIN_ROLES as readonly string[]).includes(user.role);
+
+  const kpis = [
+    { label: isAdmin ? "Total Tasks" : "My Tasks", value: stats.totalTasks, sub: `${completion}% done`, icon: <CheckSquare className="w-4 h-4 text-indigo-400" aria-hidden="true" /> },
+    { label: isAdmin ? "Overdue" : "My Overdue", value: stats.overdueTasks, sub: "Need action", icon: <AlertTriangle className="w-4 h-4 text-red-400" aria-hidden="true" />, danger: stats.overdueTasks > 0 },
+    { label: isAdmin ? "Active Projects" : "My Active Projects", value: stats.activeProjects, sub: isAdmin ? "Running now" : "You have tasks in", icon: <FolderOpen className="w-4 h-4 text-blue-400" aria-hidden="true" /> },
+    { label: "Team Members", value: stats.teamCount, sub: "Active", icon: <Users className="w-4 h-4 text-green-400" aria-hidden="true" /> },
+    ...(stats.clientCount !== null
+      ? [{ label: "Clients", value: stats.clientCount, sub: "Total", icon: <UserCircle className="w-4 h-4 text-purple-400" aria-hidden="true" /> }]
+      : []),
+    { label: isAdmin ? "Completed" : "My Completed", value: stats.doneTasks, sub: "All time", icon: <TrendingUp className="w-4 h-4 text-yellow-400" aria-hidden="true" /> },
+  ];
 
   return (
     <div className="space-y-6">
@@ -67,26 +89,23 @@ export function DashboardClient({ data, user }: Props) {
           <p className="text-gray-400 text-sm mt-0.5">Here&apos;s what&apos;s happening across your agency today</p>
         </div>
         <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 bg-gray-900 border border-gray-800 px-3 py-2 rounded-lg">
-          <Clock className="w-3.5 h-3.5" />
+          <Clock className="w-3.5 h-3.5" aria-hidden="true" />
           {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-        <KpiCard label="Total Tasks" value={stats.totalTasks} sub={`${completion}% done`} icon={<CheckSquare className="w-4 h-4 text-indigo-400" />} />
-        <KpiCard label="Overdue" value={stats.overdueTasks} sub="Need action" icon={<AlertTriangle className="w-4 h-4 text-red-400" />} danger={stats.overdueTasks > 0} />
-        <KpiCard label="Active Projects" value={stats.activeProjects} sub="Running now" icon={<FolderOpen className="w-4 h-4 text-blue-400" />} />
-        <KpiCard label="Team Members" value={stats.teamCount} sub="Active" icon={<Users className="w-4 h-4 text-green-400" />} />
-        <KpiCard label="Clients" value={stats.clientCount} sub="Total" icon={<UserCircle className="w-4 h-4 text-purple-400" />} />
-        <KpiCard label="Completed" value={stats.doneTasks} sub="All time" icon={<TrendingUp className="w-4 h-4 text-yellow-400" />} />
+        {kpis.map((kpi) => (
+          <KpiCard key={kpi.label} {...kpi} />
+        ))}
       </div>
 
       {/* Overall progress bar */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-indigo-400" />
+            <Zap className="w-4 h-4 text-indigo-400" aria-hidden="true" />
             <span className="text-sm font-semibold text-white">Agency Performance</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-gray-400">
@@ -108,7 +127,7 @@ export function DashboardClient({ data, user }: Props) {
           <span>{stats.totalTasks - stats.doneTasks} remaining</span>
           {stats.overdueTasks > 0 && (
             <span className="text-red-400 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />{stats.overdueTasks} overdue
+              <AlertTriangle className="w-3 h-3" aria-hidden="true" />{stats.overdueTasks} overdue
             </span>
           )}
         </div>
@@ -247,14 +266,44 @@ export function DashboardClient({ data, user }: Props) {
         )}
       </div>
 
+      {/* Recent clients — admin-only, org-wide view non-admins don't get */}
+      {isAdmin && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+            <div className="flex items-center gap-2">
+              <UserCircle className="w-4 h-4 text-gray-400" aria-hidden="true" />
+              <h3 className="text-sm font-semibold text-white">Recent Clients</h3>
+            </div>
+            <Link href="/clients" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">View all →</Link>
+          </div>
+          {clients.length === 0 ? (
+            <p className="px-5 py-10 text-sm text-gray-600 text-center">No clients yet</p>
+          ) : (
+            <div className="divide-y divide-gray-800/60">
+              {clients.map((client) => {
+                const active = client.projects.filter((p) => p.status === "ACTIVE").length;
+                return (
+                  <div key={client.id} className="flex items-center justify-between gap-4 px-5 py-3">
+                    <span className="text-sm text-white truncate">{client.name}</span>
+                    <span className="text-xs text-gray-500 shrink-0">
+                      {active} active · {client.projects.length} total
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Recent tasks */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-gray-400" />
+            <Clock className="w-4 h-4 text-gray-400" aria-hidden="true" />
             <h3 className="text-sm font-semibold text-white">Recent Tasks</h3>
           </div>
-          <a href="/tasks" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">View all →</a>
+          <Link href="/tasks" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">View all →</Link>
         </div>
         {recentTasks.length === 0 ? (
           <p className="px-5 py-10 text-sm text-gray-600 text-center">No tasks yet — create your first task</p>
@@ -287,10 +336,11 @@ export function DashboardClient({ data, user }: Props) {
         )}
       </div>
 
-      {/* Feature Ideas Panel */}
+      {/* Feature Ideas Panel — product roadmap, only relevant to admins */}
+      {isAdmin && (
       <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/5 border border-indigo-500/20 rounded-xl p-5">
         <div className="flex items-center gap-2 mb-4">
-          <Zap className="w-4 h-4 text-indigo-400" />
+          <Zap className="w-4 h-4 text-indigo-400" aria-hidden="true" />
           <h3 className="text-sm font-semibold text-white">Coming Next — Agency Power Features</h3>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -308,6 +358,7 @@ export function DashboardClient({ data, user }: Props) {
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }

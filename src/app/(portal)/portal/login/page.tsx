@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Megaphone, Loader2 } from "lucide-react";
 
 export default function PortalLoginPage() {
@@ -73,7 +74,7 @@ export default function PortalLoginPage() {
               disabled={loading}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
             >
-              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {loading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
               Sign in
             </button>
           </form>
@@ -81,7 +82,7 @@ export default function PortalLoginPage() {
 
         <p className="text-center text-xs text-gray-600 mt-6">
           Agency team?{" "}
-          <a href="/login" className="text-indigo-400 hover:text-indigo-300">Sign in here</a>
+          <Link href="/login" className="text-indigo-400 hover:text-indigo-300">Sign in here</Link>
         </p>
       </div>
     </div>

@@ -18,19 +18,3 @@ export function isOverdue(dueDate: Date | string | null) {
   return new Date(dueDate) < new Date();
 }
 
-export const MODULES = [
-  "clients",
-  "projects",
-  "tasks",
-  "team",
-  "ads",
-  "files",
-  "reports",
-  "roles",
-  "settings",
-] as const;
-
-export const ACTIONS = ["create", "read", "update", "delete", "approve"] as const;
-
-export type Module = (typeof MODULES)[number];
-export type Action = (typeof ACTIONS)[number];

@@ -1,18 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { Settings, Bell, Shield, Database, Save, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
+import { ImageUpload } from "@/components/ui/ImageUpload";
+import { usePageTitle } from "@/lib/hooks";
 
 export default function SettingsPage() {
+  usePageTitle("Settings");
   const { data: session, update } = useSession();
   const { toast } = useToast();
 
-  const [name, setName] = useState(session?.user.name ?? "");
+  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [avatar, setAvatar] = useState<string>("");
+
+  useEffect(() => {
+    if (session?.user.name && !name) setName(session.user.name);
+    if (session?.user.avatar && !avatar) setAvatar(session.user.avatar);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -22,6 +32,7 @@ export default function SettingsPage() {
       axios.patch(`/api/users/${session?.user.id}`, {
         name: name.trim() || undefined,
         phone: phone.trim() || undefined,
+        avatar: avatar || null,
       }).then((r) => r.data),
     onSuccess: async () => {
       await update({ name });
@@ -32,13 +43,21 @@ export default function SettingsPage() {
 
   const changePassword = useMutation({
     mutationFn: () =>
-      axios.patch(`/api/users/${session?.user.id}`, { password: newPw }).then((r) => r.data),
+      axios.patch(`/api/users/${session?.user.id}`, {
+        password: newPw,
+        currentPassword: currentPw,
+      }).then((r) => r.data),
     onSuccess: () => {
       toast("Password changed", "success");
       setCurrentPw("");
       setNewPw("");
     },
-    onError: () => toast("Failed to change password", "error"),
+    onError: (err: unknown) => {
+      const msg = axios.isAxiosError(err)
+        ? (err.response?.data?.error ?? "Failed to change password")
+        : "Failed to change password";
+      toast(msg, "error");
+    },
   });
 
   return (
@@ -55,6 +74,24 @@ export default function SettingsPage() {
           Your Profile
         </h2>
 
+        {/* Avatar upload */}
+        {session?.user.id && (
+          <div className="flex items-center gap-5">
+            <ImageUpload
+              currentUrl={avatar || null}
+              uploadType="avatar"
+              entityId={session.user.id}
+              onUploaded={(url) => setAvatar(url)}
+              shape="circle"
+              fallbackLabel={name || session.user.name || "U"}
+            />
+            <div>
+              <p className="text-sm text-white font-medium">Profile Photo</p>
+              <p className="text-xs text-gray-500 mt-0.5">Click or drag an image to update</p>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-3">
           <div>
             <label className="block text-xs text-gray-400 mb-1.5">Full Name</label>
@@ -67,6 +104,7 @@ export default function SettingsPage() {
           <div>
             <label className="block text-xs text-gray-400 mb-1.5">WhatsApp / Phone</label>
             <input
+              type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+91 98765 43210"
@@ -114,16 +152,18 @@ export default function SettingsPage() {
               className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
             />
             <button
+              type="button"
               onClick={() => setShowPw(!showPw)}
+              aria-label={showPw ? "Hide password" : "Show password"}
               className="absolute right-3 bottom-2.5 text-gray-500 hover:text-gray-300"
             >
-              {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPw ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
             </button>
           </div>
         </div>
         <button
           onClick={() => changePassword.mutate()}
-          disabled={!newPw || changePassword.isPending}
+          disabled={!currentPw || !newPw || changePassword.isPending}
           className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
         >
           <Save className="w-4 h-4" />

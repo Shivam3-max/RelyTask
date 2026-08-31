@@ -30,8 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — real secrets stay out, the template is committed
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -41,3 +42,14 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# user-uploaded content — never commit, served from disk at runtime.
+# In production these live under $STORAGE_DIR instead (see src/lib/storage.ts).
+/public/uploads/
+/public-uploads/
+/storage/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/

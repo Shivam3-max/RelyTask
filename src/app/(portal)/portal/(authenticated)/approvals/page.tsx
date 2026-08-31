@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { CheckCircle, RotateCcw, FileText, MessageSquare, Clock, CheckSquare } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
+import { CATEGORY_LABEL } from "@/lib/constants";
 
 type Task = {
   id: string;
@@ -15,21 +17,16 @@ type Task = {
   maxRevisions: number;
   dueDate?: string;
   assignee?: { name: string };
-  files: { id: string; name: string; url: string; mimeType: string }[];
+  files: { id: string; name: string; mimeType: string }[];
   _count: { comments: number };
   project?: { name: string };
 };
 
 type Project = { id: string; name: string; tasks: Task[] };
 
-const CATEGORY_LABEL: Record<string, string> = {
-  VIDEO_EDITING: "Video", GRAPHIC_DESIGN: "Design", ADS_MANAGEMENT: "Ads",
-  SHOOT: "Shoot", CONTENT_WRITING: "Content", STRATEGY: "Strategy",
-  REPORTING: "Reports", OTHER: "Other",
-};
-
 export default function ApprovalsPage() {
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [feedback, setFeedback] = useState("");
   const [action, setAction] = useState<"approve" | "revision" | null>(null);
@@ -48,12 +45,14 @@ export default function ApprovalsPage() {
   const submit = useMutation({
     mutationFn: ({ taskId, action, feedback }: { taskId: string; action: string; feedback: string }) =>
       axios.patch("/api/portal/tasks", { taskId, action, feedback }),
-    onSuccess: () => {
+    onSuccess: (_, { action: act }) => {
       qc.invalidateQueries({ queryKey: ["portal-projects"] });
       setActiveTask(null);
       setFeedback("");
       setAction(null);
+      toast(act === "approve" ? "Deliverable approved" : "Revision requested", "success");
     },
+    onError: () => toast("Failed to submit — please try again", "error"),
   });
 
   function openTask(task: Task, act: "approve" | "revision") {
@@ -72,7 +71,7 @@ export default function ApprovalsPage() {
       {/* Pending */}
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <Clock className="w-4 h-4 text-purple-400" />
+          <Clock className="w-4 h-4 text-purple-400" aria-hidden="true" />
           <h2 className="text-sm font-semibold text-white">Awaiting Your Approval</h2>
           {pendingApproval.length > 0 && (
             <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full">
@@ -83,7 +82,7 @@ export default function ApprovalsPage() {
 
         {pendingApproval.length === 0 ? (
           <div className="text-center py-12 bg-gray-900 border border-gray-800 rounded-xl">
-            <CheckCircle className="w-8 h-8 text-green-500/50 mx-auto mb-3" />
+            <CheckCircle className="w-8 h-8 text-green-500/50 mx-auto mb-3" aria-hidden="true" />
             <p className="text-sm text-gray-400 font-medium">All caught up!</p>
             <p className="text-xs text-gray-600 mt-1">No deliverables waiting for your approval</p>
           </div>
@@ -123,12 +122,12 @@ export default function ApprovalsPage() {
                     {task.files.map((file) => (
                       <a
                         key={file.id}
-                        href={file.url}
+                        href={`/api/files/${file.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-xs text-gray-300 transition-colors"
                       >
-                        <FileText className="w-3 h-3 text-indigo-400" />
+                        <FileText className="w-3 h-3 text-indigo-400" aria-hidden="true" />
                         {file.name}
                       </a>
                     ))}
@@ -138,22 +137,30 @@ export default function ApprovalsPage() {
                 {/* Action buttons */}
                 <div className="flex items-center gap-3">
                   <button
+                    type="button"
                     onClick={() => openTask(task, "approve")}
                     className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded-lg transition-colors"
                   >
-                    <CheckCircle className="w-4 h-4" />
+                    <CheckCircle className="w-4 h-4" aria-hidden="true" />
                     Approve
                   </button>
-                  <button
-                    onClick={() => openTask(task, "revision")}
-                    className="flex items-center gap-2 px-4 py-2 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-500/30 text-orange-400 text-sm font-medium rounded-lg transition-colors"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    Request Revision
-                  </button>
+                  {task.revisionNo < task.maxRevisions ? (
+                    <button
+                      type="button"
+                      onClick={() => openTask(task, "revision")}
+                      className="flex items-center gap-2 px-4 py-2 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-500/30 text-orange-400 text-sm font-medium rounded-lg transition-colors"
+                    >
+                      <RotateCcw className="w-4 h-4" aria-hidden="true" />
+                      Request Revision
+                    </button>
+                  ) : (
+                    <span className="text-xs text-gray-500">
+                      Revision limit reached — contact your agency directly
+                    </span>
+                  )}
                   {task._count.comments > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-gray-500 ml-auto">
-                      <MessageSquare className="w-3.5 h-3.5" />
+                    <div className="flex items-center gap-1 text-xs text-gray-500 ml-auto" aria-label={`${task._count.comments} comments`}>
+                      <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
                       {task._count.comments}
                     </div>
                   )}
@@ -168,13 +175,13 @@ export default function ApprovalsPage() {
       {recentlyDone.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <CheckSquare className="w-4 h-4 text-green-400" />
+            <CheckSquare className="w-4 h-4 text-green-400" aria-hidden="true" />
             <h2 className="text-sm font-semibold text-white">Recently Approved</h2>
           </div>
           <div className="bg-gray-900 border border-gray-800 rounded-xl divide-y divide-gray-800">
             {recentlyDone.map((task) => (
               <div key={task.id} className="flex items-center gap-3 px-5 py-3.5">
-                <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
+                <CheckCircle className="w-4 h-4 text-green-400 shrink-0" aria-hidden="true" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white truncate">{task.title}</p>
                   <p className="text-xs text-gray-500">{task.project?.name}</p>
@@ -188,10 +195,10 @@ export default function ApprovalsPage() {
 
       {/* Confirmation Modal */}
       {activeTask && action && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="approval-modal-title">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md">
             <div className="p-6 border-b border-gray-800">
-              <h2 className="text-lg font-semibold text-white">
+              <h2 id="approval-modal-title" className="text-lg font-semibold text-white">
                 {action === "approve" ? "Approve Deliverable" : "Request Revision"}
               </h2>
               <p className="text-sm text-gray-400 mt-1 truncate">{activeTask.title}</p>
@@ -221,12 +228,14 @@ export default function ApprovalsPage() {
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
               <button
+                type="button"
                 onClick={() => setActiveTask(null)}
                 className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() =>
                   submit.mutate({ taskId: activeTask.id, action, feedback })
                 }

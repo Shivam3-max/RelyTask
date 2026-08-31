@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Shield, Plus, Users, Trash2, Check } from "lucide-react";
-import { MODULES, ACTIONS } from "@/lib/utils";
+import { Shield, Plus, Users, Check } from "lucide-react";
+import { MODULES, ACTIONS } from "@/lib/constants";
+import { usePageTitle } from "@/lib/hooks";
+import { useToast } from "@/components/ui/Toast";
 
 type Role = {
   id: string;
@@ -16,7 +18,9 @@ type Role = {
 };
 
 export default function RolesPage() {
+  usePageTitle("Roles & Permissions");
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: "", description: "" });
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -34,7 +38,9 @@ export default function RolesPage() {
       setCreating(false);
       setForm({ name: "", description: "" });
       setSelected({});
+      toast("Role created", "success");
     },
+    onError: () => toast("Failed to create role", "error"),
   });
 
   function togglePermission(module: string, action: string) {
@@ -129,12 +135,14 @@ export default function RolesPage() {
 
       {/* Create role modal */}
       {creating && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="create-role-title">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-800">
-              <h2 className="text-lg font-semibold text-white">Create New Role</h2>
+              <h2 id="create-role-title" className="text-lg font-semibold text-white">Create New Role</h2>
               <button
+                type="button"
                 onClick={() => setCreating(false)}
+                aria-label="Close"
                 className="text-gray-400 hover:text-white"
               >
                 ✕
@@ -189,13 +197,15 @@ export default function RolesPage() {
                               <td key={action} className="py-2 px-2 text-center">
                                 <button
                                   onClick={() => togglePermission(module, action)}
+                                  aria-pressed={!!selected[key]}
+                                  aria-label={`${module} ${action}`}
                                   className={`w-5 h-5 rounded flex items-center justify-center mx-auto transition-colors ${
                                     selected[key]
                                       ? "bg-indigo-500 text-white"
                                       : "bg-gray-800 border border-gray-700"
                                   }`}
                                 >
-                                  {selected[key] && <Check className="w-3 h-3" />}
+                                  {selected[key] && <Check className="w-3 h-3" aria-hidden="true" />}
                                 </button>
                               </td>
                             );
@@ -203,6 +213,7 @@ export default function RolesPage() {
                           <td className="py-2 px-2 text-center">
                             <button
                               onClick={() => toggleAll(module)}
+                              aria-label={`Toggle all ${module} permissions`}
                               className="text-xs text-indigo-400 hover:text-indigo-300"
                             >
                               all

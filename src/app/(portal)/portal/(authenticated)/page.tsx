@@ -31,12 +31,6 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   DONE:            { label: "Done",            color: "text-green-400",  bg: "bg-green-500/20" },
 };
 
-const CATEGORY_LABEL: Record<string, string> = {
-  VIDEO_EDITING: "Video", GRAPHIC_DESIGN: "Design", ADS_MANAGEMENT: "Ads",
-  SHOOT: "Shoot", CONTENT_WRITING: "Content", STRATEGY: "Strategy",
-  REPORTING: "Reports", OTHER: "Other",
-};
-
 export default function PortalOverviewPage() {
   const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ["portal-projects"],
@@ -51,8 +45,8 @@ export default function PortalOverviewPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center h-64" role="status" aria-label="Loading">
+        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
       </div>
     );
   }

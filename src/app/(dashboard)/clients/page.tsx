@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Plus, UserCircle, FolderOpen, Phone, Mail } from "lucide-react";
+import Link from "next/link";
+import { Plus, FolderOpen, Phone, Mail, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
+import { usePageTitle } from "@/lib/hooks";
+
+const PAGE_SIZE = 9;
 
 type Client = {
   id: string;
@@ -16,14 +21,34 @@ type Client = {
 };
 
 export default function ClientsPage() {
+  usePageTitle("Clients");
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: "", companyName: "", email: "", phone: "" });
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data: clients = [], isLoading } = useQuery<Client[]>({
+  const { data: clients = [], isLoading, isError } = useQuery<Client[]>({
     queryKey: ["clients"],
     queryFn: () => axios.get("/api/clients").then((r) => r.data),
   });
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return q
+      ? clients.filter(
+          (c) =>
+            c.name.toLowerCase().includes(q) ||
+            c.email.toLowerCase().includes(q) ||
+            (c.companyName?.toLowerCase().includes(q) ?? false)
+        )
+      : clients;
+  }, [clients, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const visible = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const create = useMutation({
     mutationFn: (data: typeof form) => axios.post("/api/clients", data),
@@ -31,7 +56,9 @@ export default function ClientsPage() {
       qc.invalidateQueries({ queryKey: ["clients"] });
       setCreating(false);
       setForm({ name: "", companyName: "", email: "", phone: "" });
+      toast("Client added", "success");
     },
+    onError: () => toast("Failed to add client", "error"),
   });
 
   return (
@@ -39,26 +66,41 @@ export default function ClientsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-white">Clients</h1>
-          <p className="text-sm text-gray-400 mt-1">{clients.length} clients</p>
+          <p className="text-sm text-gray-400 mt-1">
+            {isLoading ? "Loading…" : `${filtered.length} of ${clients.length} clients`}
+          </p>
         </div>
-        <button
-          onClick={() => setCreating(true)}
-          className="flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Add Client</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              placeholder="Search clients…"
+              className="pl-9 pr-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-44 md:w-56"
+            />
+          </div>
+          <button
+            onClick={() => setCreating(true)}
+            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Client</span>
+          </button>
+        </div>
       </div>
 
       {isLoading && <p className="text-gray-500 text-sm">Loading...</p>}
+      {isError && <p className="text-red-400 text-sm">Failed to load clients — try refreshing.</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {clients.map((client) => {
+        {visible.map((client) => {
           const active = client.projects.filter((p) => p.status === "ACTIVE").length;
           return (
-            <div
+            <Link
               key={client.id}
-              className="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition-colors cursor-pointer"
+              href={`/clients/${client.id}`}
+              className="block bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition-colors"
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
@@ -95,28 +137,57 @@ export default function ClientsPage() {
                   {active} active
                 </div>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
 
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-gray-500">
+            Page {safePage} of {totalPages}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              aria-label="Previous page"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              aria-label="Next page"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {creating && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="add-client-title">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-800">
-              <h2 className="text-lg font-semibold text-white">Add Client</h2>
-              <button onClick={() => setCreating(false)} className="text-gray-400 hover:text-white">✕</button>
+              <h2 id="add-client-title" className="text-lg font-semibold text-white">Add Client</h2>
+              <button type="button" onClick={() => setCreating(false)} aria-label="Close" className="text-gray-400 hover:text-white">✕</button>
             </div>
             <div className="p-6 space-y-4">
               {[
-                { key: "name", label: "Full Name *", placeholder: "Client name" },
-                { key: "companyName", label: "Company", placeholder: "Company name" },
-                { key: "email", label: "Email *", placeholder: "client@email.com" },
-                { key: "phone", label: "WhatsApp Phone", placeholder: "+91 9000000000" },
-              ].map(({ key, label, placeholder }) => (
+                { key: "name", label: "Full Name *", placeholder: "Client name", type: "text" },
+                { key: "companyName", label: "Company", placeholder: "Company name", type: "text" },
+                { key: "email", label: "Email *", placeholder: "client@email.com", type: "email" },
+                { key: "phone", label: "WhatsApp Phone", placeholder: "+91 9000000000", type: "tel" },
+              ].map(({ key, label, placeholder, type }) => (
                 <div key={key}>
                   <label className="block text-xs text-gray-400 mb-1.5">{label}</label>
                   <input
+                    type={type}
                     value={form[key as keyof typeof form]}
                     onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"

@@ -1,8 +1,6 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { Megaphone, LogOut, FolderOpen, CheckSquare, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -15,23 +13,11 @@ const navItems = [
   { href: "/portal/reports", label: "Reports", icon: BarChart3 },
 ];
 
-export default function PortalLayout({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+// The parent (server) layout already verified the session and role before
+// rendering this — no auth/redirect logic belongs here, just the chrome.
+export function PortalShell({ children }: { children: React.ReactNode }) {
+  const { data: session } = useSession();
   const pathname = usePathname();
-
-  useEffect(() => {
-    if (status === "unauthenticated") router.push("/portal/login");
-    if (status === "authenticated" && session.user.role !== "client") router.push("/dashboard");
-  }, [status, session, router]);
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-950 pb-16 md:pb-0">
@@ -48,7 +34,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                 <span className="text-[10px] text-gray-400 ml-1 hidden sm:inline">Client Portal</span>
               </div>
             </div>
-            <nav className="hidden md:flex items-center gap-1">
+            <nav aria-label="Client portal navigation" className="hidden md:flex items-center gap-1">
               {navItems.map(({ href, label, icon: Icon }) => {
                 const active = pathname === href;
                 return (
@@ -86,7 +72,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       <main className="max-w-6xl mx-auto px-4 md:px-6 py-5 md:py-8">{children}</main>
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 flex z-40">
+      <nav aria-label="Client portal mobile navigation" className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 flex z-40">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
           return (

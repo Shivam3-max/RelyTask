@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { FolderOpen, CheckCircle, Clock, AlertCircle, Calendar } from "lucide-react";
+import { CATEGORY_LABEL } from "@/lib/constants";
 
 type Task = {
   id: string; title: string; status: string; category: string;
@@ -22,12 +23,6 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   DONE:            { label: "Done",             color: "text-green-400",  bg: "bg-green-500/20",    dot: "bg-green-500" },
 };
 
-const CATEGORY_LABEL: Record<string, string> = {
-  VIDEO_EDITING: "Video", GRAPHIC_DESIGN: "Design", ADS_MANAGEMENT: "Ads",
-  SHOOT: "Shoot", CONTENT_WRITING: "Content", STRATEGY: "Strategy",
-  REPORTING: "Reports", OTHER: "Other",
-};
-
 export default function PortalProjectsPage() {
   const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ["portal-projects"],
@@ -35,8 +30,8 @@ export default function PortalProjectsPage() {
   });
 
   if (isLoading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+    <div className="flex items-center justify-center h-64" role="status" aria-label="Loading">
+      <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
     </div>
   );
 

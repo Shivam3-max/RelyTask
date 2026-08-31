@@ -27,13 +27,13 @@ export function Breadcrumbs() {
 
   const crumbs = segments.map((seg, i) => {
     const href = "/" + segments.slice(0, i + 1).join("/");
-    const label = LABELS[seg] ?? (seg.length === 25 ? "Detail" : seg);
+    const label = LABELS[seg] ?? (/^[a-z0-9]{10,}$/.test(seg) ? "Detail" : seg);
     const isLast = i === segments.length - 1;
     return { href, label, isLast };
   });
 
   return (
-    <nav className="flex items-center gap-1 text-xs text-gray-500 mb-4">
+    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-xs text-gray-500 mb-4">
       <Link href="/dashboard" className="hover:text-gray-300 transition-colors">
         <Home className="w-3.5 h-3.5" />
       </Link>

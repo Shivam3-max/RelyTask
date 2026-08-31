@@ -51,20 +51,31 @@ export function NotificationBell() {
   const unread = notifications.filter((n) => !n.readAt).length;
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const onMouse = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onMouse);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onMouse);
+      document.removeEventListener("keydown", onKey);
+    };
   }, []);
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
+        aria-label={unread > 0 ? `Notifications — ${unread} unread` : "Notifications"}
+        aria-expanded={open}
+        aria-haspopup="true"
+        aria-controls="notification-panel"
         className="relative flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
       >
-        <Bell className="w-4 h-4" />
+        <Bell className="w-4 h-4" aria-hidden="true" />
         {unread > 0 && (
           <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
             {unread > 9 ? "9+" : unread}
@@ -73,7 +84,12 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute bottom-10 left-0 lg:bottom-auto lg:top-full lg:left-0 mt-1 w-80 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl z-50 overflow-hidden">
+        <div
+          id="notification-panel"
+          role="menu"
+          aria-label="Notifications"
+          className="absolute bottom-10 left-0 lg:bottom-auto lg:top-full lg:left-0 mt-1 w-80 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl z-50 overflow-hidden"
+        >
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
             <h3 className="text-sm font-semibold text-white">Notifications</h3>
             {unread > 0 && (
@@ -81,7 +97,7 @@ export function NotificationBell() {
                 onClick={() => markAll.mutate()}
                 className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300"
               >
-                <CheckCheck className="w-3.5 h-3.5" />
+                <CheckCheck className="w-3.5 h-3.5" aria-hidden="true" />
                 Mark all read
               </button>
             )}
@@ -92,12 +108,15 @@ export function NotificationBell() {
               <p className="text-sm text-gray-500 text-center py-8">No notifications yet</p>
             )}
             {notifications.map((n) => (
-              <div
+              <button
                 key={n.id}
+                role="menuitem"
                 onClick={() => !n.readAt && markRead.mutate(n.id)}
+                disabled={!!n.readAt}
+                aria-label={n.readAt ? n.title : `Mark "${n.title}" as read`}
                 className={cn(
-                  "flex gap-3 px-4 py-3 cursor-pointer transition-colors",
-                  n.readAt ? "opacity-50" : "hover:bg-gray-800"
+                  "w-full text-left flex gap-3 px-4 py-3 transition-colors",
+                  n.readAt ? "opacity-50 cursor-default" : "hover:bg-gray-800 cursor-pointer"
                 )}
               >
                 <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", TYPE_COLOR[n.type] ?? "bg-gray-500")} />
@@ -108,8 +127,8 @@ export function NotificationBell() {
                     {new Date(n.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
-                {!n.readAt && <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />}
-              </div>
+                {!n.readAt && <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" aria-hidden="true" />}
+              </button>
             ))}
           </div>
         </div>

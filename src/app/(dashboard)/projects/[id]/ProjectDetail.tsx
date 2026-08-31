@@ -1,15 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowLeft, Plus, CheckSquare, Calendar, Users, BookOpen,
   AlertTriangle, Clock, CheckCircle, MoreVertical, Zap
 } from "lucide-react";
 import { formatDate, isOverdue } from "@/lib/utils";
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
+import { CATEGORY_LABEL_FULL, getAvatarColor } from "@/lib/constants";
+import { hasPermission } from "@/lib/permissions";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
   TODO:            { label: "To Do",           color: "text-gray-300",   bg: "bg-gray-700",        dot: "bg-gray-500" },
@@ -27,14 +30,6 @@ const PRIORITY_CONFIG: Record<string, { color: string; dot: string }> = {
   URGENT: { color: "text-red-400",    dot: "bg-red-500" },
 };
 
-const CATEGORY_LABEL: Record<string, string> = {
-  VIDEO_EDITING: "Video Editing", GRAPHIC_DESIGN: "Graphic Design",
-  ADS_MANAGEMENT: "Ads Management", SHOOT: "Shoot",
-  CONTENT_WRITING: "Content Writing", STRATEGY: "Strategy",
-  REPORTING: "Reporting", OTHER: "Other",
-};
-
-const AVATAR_COLORS = ["bg-indigo-500","bg-pink-500","bg-green-500","bg-yellow-500","bg-blue-500","bg-purple-500"];
 
 type Task = {
   id: string; title: string; description?: string; status: string;
@@ -60,7 +55,8 @@ const EMPTY_FORM = {
 export function ProjectDetail({ project, users, sops }: {
   project: Project; users: User[]; sops: SopTemplate[];
 }) {
-  const router = useRouter();
+  const { data: session } = useSession();
+  const canCreateTask = !!session && hasPermission(session, "tasks", "create");
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [localTasks, setLocalTasks] = useState<Task[]>(project.tasks);
@@ -103,12 +99,12 @@ export function ProjectDetail({ project, users, sops }: {
     <div className="space-y-6">
       {/* Back + header */}
       <div>
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white mb-4 transition-colors"
+        <Link
+          href="/projects"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white mb-4 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Projects
-        </button>
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back to Projects
+        </Link>
 
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -128,12 +124,14 @@ export function ProjectDetail({ project, users, sops }: {
               <p className="text-gray-400 text-sm mt-1">{project.description}</p>
             )}
           </div>
-          <button
-            onClick={() => setCreating(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
-          >
-            <Plus className="w-4 h-4" /> Add Task
-          </button>
+          {canCreateTask && (
+            <button
+              onClick={() => setCreating(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
+            >
+              <Plus className="w-4 h-4" /> Add Task
+            </button>
+          )}
         </div>
       </div>
 
@@ -168,12 +166,14 @@ export function ProjectDetail({ project, users, sops }: {
           <CheckSquare className="w-10 h-10 text-gray-700 mx-auto mb-3" />
           <p className="text-gray-400 font-medium">No tasks yet</p>
           <p className="text-sm text-gray-600 mt-1 mb-4">Add your first task to get this project moving</p>
-          <button
-            onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" /> Add First Task
-          </button>
+          {canCreateTask && (
+            <button
+              onClick={() => setCreating(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Add First Task
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
@@ -193,13 +193,19 @@ export function ProjectDetail({ project, users, sops }: {
                 <div className="divide-y divide-gray-800/50">
                   {tasks.map((task) => {
                     const pCfg = PRIORITY_CONFIG[task.priority];
-                    const avatarColor = task.assignee
-                      ? AVATAR_COLORS[task.assignee.name.charCodeAt(0) % AVATAR_COLORS.length]
-                      : null;
+                    const avatarColor = task.assignee ? getAvatarColor(task.assignee.name) : null;
                     const late = task.dueDate && isOverdue(task.dueDate) && task.status !== "DONE";
 
                     return (
-                      <div key={task.id} onClick={() => setSelectedTaskId(task.id)} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-800/30 transition-colors group cursor-pointer">
+                      <div
+                        key={task.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedTaskId(task.id)}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedTaskId(task.id); } }}
+                        aria-label={`Open task: ${task.title}`}
+                        className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-800/30 transition-colors group cursor-pointer"
+                      >
                         {/* Priority dot */}
                         <div className={`w-2 h-2 rounded-full shrink-0 ${pCfg.dot}`} title={task.priority} />
 
@@ -207,7 +213,7 @@ export function ProjectDetail({ project, users, sops }: {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-white truncate">{task.title}</p>
                           <div className="flex items-center gap-3 mt-0.5">
-                            <span className="text-[11px] text-gray-500">{CATEGORY_LABEL[task.category]}</span>
+                            <span className="text-[11px] text-gray-500">{CATEGORY_LABEL_FULL[task.category]}</span>
                             {task._count.subtasks > 0 && (
                               <span className="text-[11px] text-gray-600">
                                 {task._count.subtasks} subtasks
@@ -262,14 +268,14 @@ export function ProjectDetail({ project, users, sops }: {
 
       {/* Add Task Modal */}
       {creating && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="add-task-title">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-800">
               <div>
-                <h2 className="text-lg font-semibold text-white">Add Task</h2>
+                <h2 id="add-task-title" className="text-lg font-semibold text-white">Add Task</h2>
                 <p className="text-xs text-gray-400 mt-0.5">Project: {project.name}</p>
               </div>
-              <button onClick={() => setCreating(false)} className="text-gray-400 hover:text-white">✕</button>
+              <button type="button" onClick={() => setCreating(false)} aria-label="Close" className="text-gray-400 hover:text-white">✕</button>
             </div>
 
             <div className="p-6 space-y-4">
@@ -313,7 +319,7 @@ export function ProjectDetail({ project, users, sops }: {
                     onChange={(e) => handleCategoryChange(e.target.value)}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
-                    {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
+                    {Object.entries(CATEGORY_LABEL_FULL).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
                     ))}
                   </select>
@@ -395,7 +401,9 @@ export function ProjectDetail({ project, users, sops }: {
                       />
                       {form.subtasks.length > 1 && (
                         <button
+                          type="button"
                           onClick={() => setForm({ ...form, subtasks: form.subtasks.filter((_, idx) => idx !== i) })}
+                          aria-label={`Remove step ${i + 1}`}
                           className="text-gray-600 hover:text-red-400 text-xs"
                         >✕</button>
                       )}

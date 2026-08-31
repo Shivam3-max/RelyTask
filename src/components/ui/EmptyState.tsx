@@ -12,7 +12,7 @@ export function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       <div className="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center mb-4">
-        <Icon className="w-6 h-6 text-gray-600" />
+        <Icon className="w-6 h-6 text-gray-600" aria-hidden="true" />
       </div>
       <h3 className="text-sm font-semibold text-white mb-1">{title}</h3>
       <p className="text-sm text-gray-500 max-w-xs mb-4">{description}</p>

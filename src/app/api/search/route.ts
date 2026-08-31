@@ -2,20 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ADMIN_ROLES } from "@/lib/constants";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const q = new URL(req.url).searchParams.get("q")?.trim();
+  const q = new URL(req.url).searchParams.get("q")?.trim().slice(0, 100);
   if (!q || q.length < 2) return NextResponse.json({ tasks: [], projects: [], clients: [] });
 
-  const isAdmin = ["master_admin", "project_manager"].includes(session.user.role);
+  const isAdmin = (ADMIN_ROLES as readonly string[]).includes(session.user.role);
 
   const [tasks, projects, clients] = await Promise.all([
     prisma.task.findMany({
       where: {
-        title: { contains: q, mode: "insensitive" },
+        title: { contains: q },
         ...(isAdmin ? {} : { assigneeId: session.user.id }),
       },
       include: {
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
     }),
     isAdmin
       ? prisma.project.findMany({
-          where: { name: { contains: q, mode: "insensitive" } },
+          where: { name: { contains: q } },
           include: { client: { select: { name: true } } },
           take: 5,
         })
@@ -35,8 +36,8 @@ export async function GET(req: NextRequest) {
       ? prisma.client.findMany({
           where: {
             OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { companyName: { contains: q, mode: "insensitive" } },
+              { name: { contains: q } },
+              { companyName: { contains: q } },
             ],
           },
           take: 5,

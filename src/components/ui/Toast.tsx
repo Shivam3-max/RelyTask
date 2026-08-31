@@ -46,7 +46,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="false"
+        className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"
+      >
         {toasts.map((t) => {
           const Icon = ICONS[t.type];
           return (
@@ -58,13 +63,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 STYLES[t.type]
               )}
             >
-              <Icon className="w-4 h-4 shrink-0" />
+              <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
               <p className="text-sm font-medium">{t.message}</p>
               <button
                 onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
+                aria-label="Dismiss notification"
                 className="ml-2 opacity-60 hover:opacity-100"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             </div>
           );

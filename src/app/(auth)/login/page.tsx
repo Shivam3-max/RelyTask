@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Megaphone, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
@@ -64,7 +65,12 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">Password</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-medium text-gray-400">Password</label>
+                <Link href="/forgot-password" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 type="password"
                 value={password}
@@ -84,7 +90,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
             >
-              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {loading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
               Sign in
             </button>
           </form>

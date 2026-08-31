@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
-  X, Clock, User, Calendar, CheckSquare, ChevronDown,
+  X, User, Calendar, ChevronDown,
   Send, Trash2, AlertTriangle, RefreshCw, Pencil, Check,
+  Paperclip, Film, FileText, Download, Loader2,
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate, isOverdue } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { formatDate, isOverdue, cn } from "@/lib/utils";
+import { CATEGORY_LABEL } from "@/lib/constants";
+import { hasPermission } from "@/lib/permissions";
 
 const STATUS_OPTIONS = [
   { value: "TODO", label: "To Do", color: "bg-gray-700 text-gray-300" },
@@ -34,12 +37,6 @@ const RECURRENCE_OPTIONS = [
   { value: "MONTHLY", label: "Monthly" },
 ];
 
-const CATEGORY_LABEL: Record<string, string> = {
-  VIDEO_EDITING: "Video Editing", GRAPHIC_DESIGN: "Graphic Design",
-  ADS_MANAGEMENT: "Ads Management", SHOOT: "Shoot",
-  CONTENT_WRITING: "Content Writing", STRATEGY: "Strategy",
-  REPORTING: "Reporting", OTHER: "Other",
-};
 
 type Task = {
   id: string; title: string; description?: string; status: string;
@@ -50,14 +47,33 @@ type Task = {
   project?: { id: string; name: string; client: { name: string } };
   subtasks: { id: string; title: string; done: boolean }[];
   comments: { id: string; body: string; createdAt: string; author: { id: string; name: string } }[];
+  files: { id: string; name: string; size: number; mimeType: string; uploadedBy: string; createdAt: string }[];
   _count: { comments: number; files: number; subtasks: number };
 };
+
+const ACCEPTED_ATTACHMENT_TYPES = [
+  "image/jpeg", "image/png", "image/webp", "image/gif",
+  "video/mp4", "video/quicktime", "video/webm", "video/x-msvideo",
+  "application/pdf", "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/zip",
+].join(",");
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export function TaskDetailModal({ taskId, onClose, onUpdate }: {
   taskId: string;
   onClose: () => void;
   onUpdate?: (task: Task) => void;
 }) {
+  const { data: session } = useSession();
+  const canDeleteTask = !!session && hasPermission(session, "tasks", "delete");
   const qc = useQueryClient();
   const { toast } = useToast();
   const [comment, setComment] = useState("");
@@ -66,6 +82,10 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
   const [editTitle, setEditTitle] = useState("");
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDesc, setEditDesc] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: task, isLoading } = useQuery<Task>({
     queryKey: ["task", taskId],
@@ -87,6 +107,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
     mutationFn: ({ subtaskId, done }: { subtaskId: string; done: boolean }) =>
       axios.patch(`/api/tasks/${taskId}/subtasks`, { subtaskId, done }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["task", taskId] }),
+    onError: () => toast("Failed to update checklist item", "error"),
   });
 
   const addComment = useMutation({
@@ -95,6 +116,29 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
       setComment("");
       qc.invalidateQueries({ queryKey: ["task", taskId] });
     },
+    onError: () => toast("Failed to post comment", "error"),
+  });
+
+  const uploadFile = useMutation({
+    mutationFn: (file: globalThis.File) => {
+      const body = new FormData();
+      body.append("file", file);
+      return axios.post(`/api/tasks/${taskId}/files`, body).then((r) => r.data);
+    },
+    onSuccess: () => {
+      setUploadError("");
+      qc.invalidateQueries({ queryKey: ["task", taskId] });
+    },
+    onError: (err) => {
+      const msg = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      setUploadError(msg || "Upload failed");
+    },
+  });
+
+  const deleteFile = useMutation({
+    mutationFn: (fileId: string) => axios.delete(`/api/files/${fileId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["task", taskId] }),
+    onError: () => toast("Failed to delete attachment", "error"),
   });
 
   const deleteTask = useMutation({
@@ -103,32 +147,40 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
       qc.invalidateQueries({ queryKey: ["tasks"] });
       onClose();
     },
+    onError: () => toast("Failed to delete task", "error"),
   });
 
-  // Close on escape
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    dialogRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (deleteConfirm) setDeleteConfirm(false);
+        else onClose();
+      }
+    };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  }, [onClose, deleteConfirm]);
 
   if (isLoading || !task) {
     return (
-      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" role="status" aria-label="Loading task">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
       </div>
     );
   }
 
   const statusCfg = STATUS_OPTIONS.find((s) => s.value === task.status)!;
-  const priCfg = PRIORITY_OPTIONS.find((p) => p.value === task.priority)!;
   const doneSubtasks = task.subtasks.filter((s) => s.done).length;
   const sopPct = task.subtasks.length ? Math.round((doneSubtasks / task.subtasks.length) * 100) : null;
   const late = task.dueDate && isOverdue(task.dueDate) && task.status !== "DONE";
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[95vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" role="dialog" aria-modal="true" aria-label={task.title}>
+      <div ref={dialogRef} tabIndex={-1} className="bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[95vh] flex flex-col focus:outline-none">
         {/* Header */}
         <div className="flex items-start justify-between p-5 border-b border-gray-800 shrink-0">
           <div className="flex-1 min-w-0 pr-4">
@@ -166,19 +218,44 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
                 className="flex items-center gap-1.5 group/title text-left"
               >
                 <h2 className="text-lg font-semibold text-white leading-snug">{task.title}</h2>
-                <Pencil className="w-3.5 h-3.5 text-gray-600 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0 mt-0.5" />
+                <Pencil className="w-3.5 h-3.5 text-gray-600 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0 mt-0.5" aria-hidden="true" />
               </button>
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => { if (confirm("Delete this task?")) deleteTask.mutate(); }}
-              className="p-1.5 text-gray-600 hover:text-red-400 transition-colors rounded-lg hover:bg-gray-800"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800">
-              <X className="w-4 h-4" />
+            {canDeleteTask && (deleteConfirm ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-red-400">Delete?</span>
+                <button
+                  type="button"
+                  onClick={() => deleteTask.mutate()}
+                  disabled={deleteTask.isPending}
+                  aria-label="Confirm delete task"
+                  className="px-2 py-1 text-xs bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirm(false)}
+                  aria-label="Cancel delete"
+                  className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(true)}
+                aria-label="Delete task"
+                className="p-1.5 text-gray-600 hover:text-red-400 transition-colors rounded-lg hover:bg-gray-800"
+              >
+                <Trash2 className="w-4 h-4" aria-hidden="true" />
+              </button>
+            ))}
+            <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800">
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -191,16 +268,19 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
               {/* Status picker */}
               <div className="relative">
                 <button
+                  type="button"
                   onClick={() => setStatusOpen(!statusOpen)}
+                  aria-expanded={statusOpen}
                   className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors", statusCfg.color)}
                 >
                   {statusCfg.label}
-                  <ChevronDown className="w-3.5 h-3.5" />
+                  <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
                 {statusOpen && (
                   <div className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-10 overflow-hidden min-w-[160px]">
                     {STATUS_OPTIONS.map((s) => (
                       <button
+                        type="button"
                         key={s.value}
                         onClick={() => { updateTask.mutate({ status: s.value }); setStatusOpen(false); }}
                         className={cn("w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-700", s.color)}
@@ -238,17 +318,17 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
             {/* Meta row */}
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2 text-gray-400">
-                <User className="w-3.5 h-3.5 shrink-0" />
+                <User className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 <span>{task.assignee?.name ?? "Unassigned"}</span>
               </div>
               <div className={cn("flex items-center gap-2", late ? "text-red-400" : "text-gray-400")}>
-                <Calendar className="w-3.5 h-3.5 shrink-0" />
+                <Calendar className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 <span>{task.dueDate ? formatDate(task.dueDate) : "No due date"}</span>
-                {late && <AlertTriangle className="w-3.5 h-3.5" />}
+                {late && <AlertTriangle className="w-3.5 h-3.5" aria-label="Overdue" />}
               </div>
               {task.recurrence && task.recurrence !== "NONE" && (
                 <div className="flex items-center gap-2 text-indigo-400">
-                  <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+                  <RefreshCw className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                   <span>Repeats {task.recurrence.toLowerCase()}</span>
                 </div>
               )}
@@ -263,10 +343,11 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
                 <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Description</p>
                 {!editingDesc && (
                   <button
+                    type="button"
                     onClick={() => { setEditDesc(task.description || ""); setEditingDesc(true); }}
                     className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-400 transition-colors"
                   >
-                    <Pencil className="w-3 h-3" /> Edit
+                    <Pencil className="w-3 h-3" aria-hidden="true" /> Edit
                   </button>
                 )}
               </div>
@@ -282,15 +363,17 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
                   />
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => {
                         updateTask.mutate({ description: editDesc.trim() || null });
                         setEditingDesc(false);
                       }}
                       className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg transition-colors"
                     >
-                      <Check className="w-3 h-3" /> Save
+                      <Check className="w-3 h-3" aria-hidden="true" /> Save
                     </button>
                     <button
+                      type="button"
                       onClick={() => setEditingDesc(false)}
                       className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs rounded-lg transition-colors"
                     >
@@ -328,24 +411,97 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
                 )}
                 <div className="space-y-2">
                   {task.subtasks.map((sub) => (
-                    <label key={sub.id} className="flex items-start gap-3 cursor-pointer group">
+                    <div key={sub.id} className="flex items-start gap-3 group">
                       <button
+                        type="button"
                         onClick={() => toggleSubtask.mutate({ subtaskId: sub.id, done: !sub.done })}
+                        aria-label={sub.done ? `Mark "${sub.title}" incomplete` : `Mark "${sub.title}" complete`}
+                        aria-pressed={sub.done}
                         className={cn(
                           "w-4 h-4 rounded border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
                           sub.done ? "bg-indigo-500 border-indigo-500" : "border-gray-600 group-hover:border-gray-400"
                         )}
                       >
-                        {sub.done && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        {sub.done && <svg className="w-2.5 h-2.5 text-white" aria-hidden="true" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                       </button>
                       <span className={cn("text-sm", sub.done ? "line-through text-gray-600" : "text-gray-300")}>
                         {sub.title}
                       </span>
-                    </label>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
+
+            {/* Attachments */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                  Attachments ({task.files.length})
+                </p>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadFile.isPending}
+                  className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-400 transition-colors disabled:opacity-50"
+                >
+                  {uploadFile.isPending ? (
+                    <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Paperclip className="w-3 h-3" aria-hidden="true" />
+                  )}
+                  {uploadFile.isPending ? "Uploading…" : "Attach video / file"}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ACCEPTED_ATTACHMENT_TYPES}
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) uploadFile.mutate(f);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+              {uploadError && <p className="text-xs text-red-400 mb-2">{uploadError}</p>}
+              {task.files.length > 0 ? (
+                <div className="space-y-1.5">
+                  {task.files.map((f) => (
+                    <div key={f.id} className="flex items-center gap-2 bg-gray-800 rounded-lg px-3 py-2 group">
+                      {f.mimeType.startsWith("video/") ? (
+                        <Film className="w-4 h-4 text-cyan-400 shrink-0" aria-hidden="true" />
+                      ) : (
+                        <FileText className="w-4 h-4 text-gray-500 shrink-0" aria-hidden="true" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-200 truncate">{f.name}</p>
+                        <p className="text-[11px] text-gray-500">{formatBytes(f.size)}</p>
+                      </div>
+                      <a
+                        href={`/api/files/${f.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Download ${f.name}`}
+                        className="p-1 text-gray-500 hover:text-indigo-400 transition-colors"
+                      >
+                        <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => deleteFile.mutate(f.id)}
+                        aria-label={`Remove ${f.name}`}
+                        className="p-1 text-gray-600 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600 italic">No attachments yet.</p>
+              )}
+            </div>
 
             {/* Comments */}
             <div>
@@ -390,11 +546,13 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
               className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <button
+              type="button"
               onClick={() => comment.trim() && addComment.mutate()}
               disabled={!comment.trim() || addComment.isPending}
+              aria-label="Send comment"
               className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-lg transition-colors"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>

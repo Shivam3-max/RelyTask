@@ -2,9 +2,10 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import type { Module, Action } from "./constants";
 
 export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 8 * 60 * 60 }, // 8 hours
   pages: { signIn: "/login" },
   providers: [
     CredentialsProvider({
@@ -35,9 +36,12 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           name: user.name,
           email: user.email,
+          avatar: user.avatar,
           role: user.role.name,
           roleId: user.roleId,
-          permissions: user.role.permissions.map((p: { module: string; action: string }) => `${p.module}:${p.action}`),
+          permissions: user.role.permissions.map(
+            (p: { module: string; action: string }) => `${p.module}:${p.action}` as `${Module}:${Action}`
+          ),
         };
       },
     }),
@@ -46,18 +50,20 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
-        token.roleId = (user as any).roleId;
-        token.permissions = (user as any).permissions;
+        token.avatar = user.avatar;
+        token.role = user.role;
+        token.roleId = user.roleId;
+        token.permissions = user.permissions;
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-        session.user.roleId = token.roleId as string;
-        session.user.permissions = token.permissions as string[];
+        session.user.id = token.id;
+        session.user.avatar = token.avatar;
+        session.user.role = token.role;
+        session.user.roleId = token.roleId;
+        session.user.permissions = token.permissions;
       }
       return session;
     },
