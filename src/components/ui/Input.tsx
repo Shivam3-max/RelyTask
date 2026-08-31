@@ -2,10 +2,9 @@ import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 export const inputClass =
-  "w-full rounded border border-gray-700 bg-gray-100 px-3 py-1.5 text-sm text-white " +
+  "w-full rounded-lg border border-gray-700 bg-gray-950/60 px-3 py-2 text-sm text-white " +
   "placeholder:text-gray-600 transition-colors " +
-  "hover:bg-gray-200 " +
-  "focus:border-indigo-500 focus:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 " +
+  "focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 " +
   "disabled:cursor-not-allowed disabled:opacity-60";
 
 export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(

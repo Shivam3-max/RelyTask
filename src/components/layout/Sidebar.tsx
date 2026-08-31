@@ -75,7 +75,7 @@ function SidebarContent({ pathname, session, isAdmin, canViewAllTasks, onNavClic
         <button
           onClick={onNavClick}
           aria-label="Close navigation"
-          className="lg:hidden -mr-1 p-1.5 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-100"
+          className="lg:hidden -mr-1 p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
         >
           <X className="w-4 h-4" aria-hidden="true" />
         </button>
@@ -106,16 +106,19 @@ function SidebarContent({ pathname, session, isAdmin, canViewAllTasks, onNavClic
                       onClick={onNavClick}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "group relative flex items-center gap-2.5 rounded px-2.5 h-8 text-[13px] font-medium transition-colors",
+                        "group relative flex items-center gap-2.5 rounded-lg px-2.5 h-8 text-[13px] font-medium transition-colors",
                         active
-                          ? "bg-indigo-900 text-indigo-700"
-                          : "text-gray-400 hover:text-gray-300 hover:bg-gray-100"
+                          ? "bg-gray-800/70 text-white"
+                          : "text-gray-400 hover:text-gray-100 hover:bg-gray-800/40"
                       )}
                     >
+                      {active && (
+                        <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-indigo-500" aria-hidden="true" />
+                      )}
                       <Icon
                         className={cn(
                           "w-4 h-4 shrink-0 transition-colors",
-                          active ? "text-indigo-700" : "text-gray-600 group-hover:text-gray-400"
+                          active ? "text-indigo-400" : "text-gray-500 group-hover:text-gray-300"
                         )}
                         aria-hidden="true"
                       />
@@ -178,7 +181,7 @@ export function Sidebar() {
             aria-label="Open navigation"
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav-drawer"
-            className="p-1.5 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-100 transition-colors"
+            className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
           >
             <Menu className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -188,7 +191,7 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-[#091e4266] z-40"
+          className="lg:hidden fixed inset-0 bg-black/60 z-40"
           aria-hidden="true"
           onClick={() => setMobileOpen(false)}
         />

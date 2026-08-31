@@ -169,7 +169,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
 
   if (isLoading || !task) {
     return (
-      <div className="fixed inset-0 bg-[#091e4266] flex items-center justify-center z-50" role="status" aria-label="Loading task">
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" role="status" aria-label="Loading task">
         <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
       </div>
     );
@@ -181,7 +181,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
   const late = task.dueDate && isOverdue(task.dueDate) && task.status !== "DONE";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#091e4266] p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={task.title}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={task.title}>
       <div ref={dialogRef} tabIndex={-1} className="flex max-h-[95vh] w-full flex-col rounded-t-2xl border border-gray-800 bg-gray-900 shadow-2xl focus:outline-none sm:max-w-2xl sm:rounded-2xl">
         {/* Header */}
         <div className="flex shrink-0 items-start justify-between border-b border-gray-800 p-5">
@@ -231,7 +231,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
                   onClick={() => deleteTask.mutate()}
                   disabled={deleteTask.isPending}
                   aria-label="Confirm delete task"
-                  className="px-2 py-1 text-xs bg-red-600 hover:bg-red-500 text-onblue rounded-lg transition-colors"
+                  className="px-2 py-1 text-xs bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
                 >
                   Yes
                 </button>
@@ -368,7 +368,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
                         updateTask.mutate({ description: editDesc.trim() || null });
                         setEditingDesc(false);
                       }}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-onblue text-xs rounded-lg transition-colors"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg transition-colors"
                     >
                       <Check className="w-3 h-3" aria-hidden="true" /> Save
                     </button>
@@ -550,7 +550,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdate }: {
               onClick={() => comment.trim() && addComment.mutate()}
               disabled={!comment.trim() || addComment.isPending}
               aria-label="Send comment"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-indigo-600 text-onblue transition-colors hover:bg-indigo-500 disabled:opacity-40"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-indigo-600 text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
             >
               <Send className="h-4 w-4" aria-hidden="true" />
             </button>

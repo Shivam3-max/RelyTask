@@ -166,7 +166,7 @@ export default function RolesPage() {
                               aria-label={`${module} ${action}`}
                               className={cn(
                                 "mx-auto grid h-5 w-5 place-items-center rounded transition-colors",
-                                selected[key] ? "bg-indigo-600 text-onblue" : "border border-gray-700 bg-gray-800"
+                                selected[key] ? "bg-indigo-600 text-white" : "border border-gray-700 bg-gray-800"
                               )}
                             >
                               {selected[key] && <Check className="h-3 w-3" aria-hidden="true" />}

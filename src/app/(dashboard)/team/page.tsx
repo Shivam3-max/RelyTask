@@ -141,7 +141,7 @@ export default function TeamPage() {
             )}
           >
             <div className="mb-3.5 flex items-center gap-3">
-              <span className={cn("grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full text-sm font-semibold text-onblue", getAvatarColor(user.name))}>
+              <span className={cn("grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full text-sm font-semibold text-white", getAvatarColor(user.name))}>
                 {user.avatar ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={user.avatar} alt="" className="h-full w-full object-cover" />

@@ -177,7 +177,7 @@ export function ProjectDetail({ project, users, sops }: {
                         <div className="shrink-0">
                           {task.assignee ? (
                             <span className="flex items-center gap-1.5">
-                              <span className={cn("grid h-6 w-6 place-items-center rounded-full text-[10px] font-semibold text-onblue", getAvatarColor(task.assignee.name))}>
+                              <span className={cn("grid h-6 w-6 place-items-center rounded-full text-[10px] font-semibold text-white", getAvatarColor(task.assignee.name))}>
                                 {task.assignee.name.charAt(0).toUpperCase()}
                               </span>
                               <span className="hidden text-xs text-gray-400 md:block">{task.assignee.name.split(" ")[0]}</span>

@@ -32,7 +32,7 @@ export default function PortalLoginPage() {
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
-        style={{ background: "radial-gradient(56rem 30rem at 50% -10rem, rgba(12,102,228,0.10), transparent 70%)" }}
+        style={{ background: "radial-gradient(60rem 32rem at 50% -8rem, rgba(91,99,235,0.16), transparent 70%)" }}
       />
       <div className="relative w-full max-w-[400px] animate-rt-fade-up">
         <div className="mb-7 flex items-center justify-center gap-2">
@@ -41,7 +41,7 @@ export default function PortalLoginPage() {
           <span className="text-sm font-medium text-gray-500">Portal</span>
         </div>
 
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-7 shadow-[0_1px_1px_rgba(9,30,66,0.08),0_8px_24px_-8px_rgba(9,30,66,0.12)]">
+        <div className="rounded-2xl border border-gray-800 bg-gray-900/80 p-7 backdrop-blur-sm">
           <h1 className="text-lg font-semibold tracking-tight text-white">Client sign in</h1>
           <p className="mt-1 text-sm text-gray-500">See your projects, approvals and reports.</p>
 

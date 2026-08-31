@@ -28,10 +28,10 @@ const ICONS = {
 };
 
 const STYLES = {
-  success: "text-green-500",
-  error: "text-red-500",
-  warning: "text-yellow-400",
-  info: "text-indigo-400",
+  success: "bg-green-500/10 border-green-500/30 text-green-400",
+  error: "bg-red-500/10 border-red-500/30 text-red-400",
+  warning: "bg-yellow-500/10 border-yellow-500/30 text-yellow-400",
+  info: "bg-indigo-500/10 border-indigo-500/30 text-indigo-400",
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -58,12 +58,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={t.id}
               className={cn(
-                "pointer-events-auto flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 shadow-[0_8px_24px_-4px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)]",
-                "animate-in slide-in-from-bottom-2 duration-200"
+                "flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl backdrop-blur-sm pointer-events-auto",
+                "animate-in slide-in-from-bottom-2 duration-200",
+                STYLES[t.type]
               )}
             >
-              <Icon className={cn("w-4 h-4 shrink-0", STYLES[t.type])} aria-hidden="true" />
-              <p className="text-sm font-medium text-white">{t.message}</p>
+              <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <p className="text-sm font-medium">{t.message}</p>
               <button
                 onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
                 aria-label="Dismiss notification"

@@ -26,7 +26,7 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 md:h-16 md:px-6">
           <div className="flex items-center gap-7">
             <Link href="/portal" className="flex items-center gap-2.5">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-600 text-[12px] font-bold text-onblue">R</span>
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-600 text-[12px] font-bold text-white">R</span>
               <span className="text-sm font-semibold tracking-tight text-white">
                 RELYTASK <span className="font-normal text-gray-500">Portal</span>
               </span>

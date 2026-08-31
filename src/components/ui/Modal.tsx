@@ -29,7 +29,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#091e4266] p-4 sm:items-center"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-label={title}
@@ -37,7 +37,7 @@ export function Modal({
     >
       <div
         className={cn(
-          "my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-lg border border-gray-800 bg-gray-900 shadow-[0_8px_24px_-4px_rgba(9,30,66,0.25),0_0_1px_rgba(9,30,66,0.31)] animate-rt-fade-up",
+          "my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 shadow-2xl animate-rt-fade-up",
           size === "sm" && "max-w-sm",
           size === "md" && "max-w-md",
           size === "lg" && "max-w-lg",
