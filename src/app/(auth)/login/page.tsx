@@ -31,7 +31,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <h1 className="text-lg font-semibold tracking-tight text-white">Sign in</h1>
+      <h1 className="text-xl font-semibold tracking-tight text-white">Sign in</h1>
       <p className="mt-1 text-sm text-gray-500">Welcome back to your workspace.</p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">

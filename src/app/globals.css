@@ -1,45 +1,43 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   RELYTASK design system — a Linear/Vercel-style dark workspace.
+   RELYTASK — dark, blue-black finance-app aesthetic.
 
-   The app is styled almost entirely with Tailwind's default `gray-*` /
-   `indigo-*` scales and `rounded-*` radii. Rather than rewrite every page,
-   we retune those scales here so the whole product picks up one considered
-   dark palette, tighter radii, and the Geist type family.
+   The app is styled with Tailwind's default `gray-*` / `indigo-*` scales and
+   `rounded-*` radii. They're retuned here to a cool blue-black palette with a
+   vivid electric-blue accent and generous rounding.
    ──────────────────────────────────────────────────────────────────────────── */
 
 @theme {
-  /* Type */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
 
-  /* Neutral ramp — cool near-black, soft hairline borders */
-  --color-gray-950: #0a0a0c;
-  --color-gray-900: #141417;
-  --color-gray-800: #232328;
-  --color-gray-700: #33333b;
-  --color-gray-600: #55555f;
-  --color-gray-500: #8b8b96;
-  --color-gray-400: #b3b3bd;
-  --color-gray-300: #d3d3db;
-  --color-gray-200: #e6e6ea;
-  --color-gray-100: #f2f2f4;
+  /* Blue-black neutral ramp */
+  --color-gray-950: #0a0d15;   /* app canvas */
+  --color-gray-900: #141824;   /* card surface */
+  --color-gray-800: #232a3a;   /* hairline borders + faint chips */
+  --color-gray-700: #333c4f;
+  --color-gray-600: #5b6579;   /* faint text / icons */
+  --color-gray-500: #8891a6;   /* muted text */
+  --color-gray-400: #aab2c6;   /* secondary text */
+  --color-gray-300: #ccd3e0;   /* near-primary text */
+  --color-gray-200: #e4e8f0;
+  --color-gray-100: #f1f3f8;
 
-  /* Accent — a restrained indigo/periwinkle */
-  --color-indigo-300: #b3bdff;
-  --color-indigo-400: #8f9cff;
-  --color-indigo-500: #6b78f5;
-  --color-indigo-600: #5b63eb;
-  --color-indigo-700: #4a4fd0;
-  --color-indigo-900: #241f4d;
-  --color-indigo-950: #171533;
+  /* Electric blue accent */
+  --color-indigo-300: #a9d1ff;
+  --color-indigo-400: #7db4ff;   /* links / accent text */
+  --color-indigo-500: #5b9dff;
+  --color-indigo-600: #3d7cf5;   /* primary buttons */
+  --color-indigo-700: #2f63d4;
+  --color-indigo-900: #16233f;   /* tint (selected nav) */
+  --color-indigo-950: #101a30;
 
-  /* Slightly desaturated status colors so they sit calmly on near-black */
-  --color-green-400: #4ade80;
-  --color-green-500: #3ecf7e;
-  --color-red-400: #ff6b6b;
-  --color-red-500: #f0484a;
+  /* Status colours, tuned for the blue-black ground */
+  --color-green-400: #3ecf8e;
+  --color-green-500: #2fb87c;
+  --color-red-400: #f26069;
+  --color-red-500: #e5484d;
   --color-yellow-400: #f5c451;
   --color-orange-400: #ff9557;
   --color-purple-400: #b78bff;
@@ -47,16 +45,16 @@
   --color-pink-400: #ff7eb6;
   --color-teal-400: #3fd8c8;
 
-  /* Tighter, more uniform radii */
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.625rem;
-  --radius-2xl: 0.875rem;
+  /* Generous rounding, like the reference */
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.25rem;
 }
 
 :root {
-  --background: #0a0a0c;
-  --foreground: #ededf0;
-  --accent: #5b63eb;
+  --background: #0a0d15;
+  --foreground: #eef1f7;
+  --accent: #3d7cf5;
 }
 
 @layer base {
@@ -65,9 +63,7 @@
     border-color: var(--color-gray-800);
   }
 
-  html {
-    -webkit-tap-highlight-color: transparent;
-  }
+  html { -webkit-tap-highlight-color: transparent; }
 
   body {
     background: var(--background);
@@ -78,19 +74,13 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Headings sit tighter than body copy */
-  h1, h2, h3, h4 {
-    letter-spacing: -0.014em;
-  }
+  h1, h2, h3, h4 { letter-spacing: -0.014em; }
 
-  /* App-wide interaction polish so every inline button/field feels considered */
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   a[href],
   label[for],
-  summary {
-    cursor: pointer;
-  }
+  summary { cursor: pointer; }
 
   button {
     transition: background-color 0.15s ease, border-color 0.15s ease,
@@ -101,27 +91,28 @@
   button:disabled { cursor: not-allowed; opacity: 0.55; }
 
   input, textarea, select {
-    transition: border-color 0.15s ease, box-shadow 0.15s ease,
-      background-color 0.15s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   }
   input::placeholder, textarea::placeholder { color: var(--color-gray-600); }
 }
 
 @layer utilities {
-  /* Fade-up used by page shells and the dashboard */
   @keyframes rt-fade-up {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
   }
   .animate-rt-fade-up { animation: rt-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+
+  /* Electric-blue gradients for primary actions and brand surfaces */
+  .rt-gradient { background-image: linear-gradient(120deg, #4c8dff 0%, #7db4ff 100%); }
+  .rt-gradient-brand { background-image: linear-gradient(150deg, #2f63d4 0%, #4c8dff 45%, #8ec5ff 100%); }
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  background: color-mix(in srgb, var(--accent) 36%, transparent);
   color: #fff;
 }
 
-/* Quiet, thin scrollbars */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
@@ -133,14 +124,12 @@
 ::-webkit-scrollbar-thumb:hover { background: var(--color-gray-700); background-clip: content-box; }
 * { scrollbar-width: thin; scrollbar-color: var(--color-gray-800) transparent; }
 
-/* One consistent focus ring for keyboard users */
 :focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 75%, transparent);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* Recharts polish — hide the default focus outline on chart surfaces */
 .recharts-wrapper:focus,
 .recharts-surface:focus { outline: none; }
 

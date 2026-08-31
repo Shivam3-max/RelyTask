@@ -126,7 +126,7 @@ export function ProjectDetail({ project, users, sops }: {
           <span className="text-sm font-semibold tabular-nums text-white">{completion}%</span>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-800">
-          <div className="h-full rounded-full bg-indigo-500 transition-[width] duration-700 ease-out" style={{ width: `${completion}%` }} />
+          <div className="h-full rounded-full rt-gradient transition-[width] duration-700 ease-out" style={{ width: `${completion}%` }} />
         </div>
         <p className="mt-1.5 text-xs text-gray-500">{done} of {localTasks.length} tasks done</p>
       </div>

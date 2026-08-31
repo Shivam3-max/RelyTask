@@ -46,7 +46,7 @@ function ResetPasswordForm() {
     return (
       <div className="text-center">
         <CheckCircle2 className="mx-auto mb-4 h-10 w-10 text-green-400" aria-hidden="true" />
-        <h1 className="text-lg font-semibold tracking-tight text-white">Password updated</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-white">Password updated</h1>
         <p className="mt-2 text-sm text-gray-500">Taking you to sign in…</p>
       </div>
     );
@@ -56,7 +56,7 @@ function ResetPasswordForm() {
     return (
       <div className="text-center">
         <XCircle className="mx-auto mb-4 h-10 w-10 text-red-400" aria-hidden="true" />
-        <h1 className="text-lg font-semibold tracking-tight text-white">Link not valid</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-white">Link not valid</h1>
         <p className="mx-auto mt-2 max-w-xs text-sm text-gray-500">
           This reset link is missing or malformed.
         </p>
@@ -69,7 +69,7 @@ function ResetPasswordForm() {
 
   return (
     <>
-      <h1 className="text-lg font-semibold tracking-tight text-white">Set a new password</h1>
+      <h1 className="text-xl font-semibold tracking-tight text-white">Set a new password</h1>
       <p className="mt-1 text-sm text-gray-500">At least 8 characters.</p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">

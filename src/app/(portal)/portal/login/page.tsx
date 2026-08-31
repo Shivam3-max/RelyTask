@@ -28,21 +28,30 @@ export default function PortalLoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gray-950 px-4 py-10">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{ background: "radial-gradient(60rem 32rem at 50% -8rem, rgba(91,99,235,0.16), transparent 70%)" }}
-      />
-      <div className="relative w-full max-w-[400px] animate-rt-fade-up">
-        <div className="mb-7 flex items-center justify-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/Logo.png" alt="RELYTASK" className="h-9 w-auto" />
-          <span className="text-sm font-medium text-gray-500">Portal</span>
+    <div className="flex min-h-screen items-center justify-center bg-gray-950 p-4">
+      <div className="grid w-full max-w-[880px] animate-rt-fade-up overflow-hidden rounded-2xl border border-gray-800 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] md:grid-cols-2">
+        {/* Brand panel */}
+        <div className="rt-gradient-brand relative hidden flex-col justify-between overflow-hidden p-9 md:flex">
+          <div aria-hidden="true" className="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-white/20 blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -right-16 h-80 w-80 rounded-full bg-[#8ec5ff]/40 blur-3xl" />
+          <span className="relative inline-flex w-fit rounded-xl bg-white/95 px-3.5 py-2.5 shadow-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/Logo.png" alt="RELYTASK" className="h-7 w-auto" />
+          </span>
+          <div className="relative">
+            <p className="text-[26px] font-semibold leading-tight text-white">Your delivery,<br />in one view</p>
+            <p className="mt-2.5 max-w-[15rem] text-sm text-white/75">Track projects, review work, and approve deliverables.</p>
+          </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-800 bg-gray-900/80 p-7 backdrop-blur-sm">
-          <h1 className="text-lg font-semibold tracking-tight text-white">Client sign in</h1>
+        {/* Form panel */}
+        <div className="bg-gray-900 px-7 py-9 sm:px-10">
+          <div className="mb-7 flex items-center gap-2 md:hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/Logo.png" alt="RELYTASK" className="h-8 w-auto" />
+          </div>
+
+          <h1 className="text-xl font-semibold tracking-tight text-white">Client sign in</h1>
           <p className="mt-1 text-sm text-gray-500">See your projects, approvals and reports.</p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -77,14 +86,14 @@ export default function PortalLoginPage() {
               Sign in
             </Button>
           </form>
-        </div>
 
-        <p className="mt-6 text-center text-xs text-gray-600">
-          On the team?{" "}
-          <Link href="/login" className="text-gray-400 transition-colors hover:text-white">
-            Sign in here
-          </Link>
-        </p>
+          <p className="mt-6 text-xs text-gray-600">
+            On the team?{" "}
+            <Link href="/login" className="text-gray-400 transition-colors hover:text-white">
+              Sign in here
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

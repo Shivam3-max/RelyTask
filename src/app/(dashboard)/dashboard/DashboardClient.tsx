@@ -25,13 +25,13 @@ const STATUS_TONE: Record<string, "neutral" | "info" | "warning" | "accent" | "s
 
 // Chart theme — kept in one place so every surface reads as one system.
 const CHART = {
-  accent: "#6b78f5",
-  positive: "#3ecf7e",
-  axis: "#6b6b73",
-  grid: "#1f1f23",
-  tooltip: { background: "#141417", border: "1px solid #232328", borderRadius: 10, fontSize: 12, padding: "8px 10px", color: "#ededf0" },
-  tooltipLabel: { color: "#8b8b96", marginBottom: 2 },
-  series: ["#6b78f5", "#8f9cff", "#b78bff", "#5fa8ff", "#3fd8c8", "#3ecf7e"],
+  accent: "#4c8dff",
+  positive: "#3ecf8e",
+  axis: "#5b6579",
+  grid: "#1c2331",
+  tooltip: { background: "#141824", border: "1px solid #232a3a", borderRadius: 12, fontSize: 12, padding: "8px 10px", color: "#eef1f7" },
+  tooltipLabel: { color: "#8891a6", marginBottom: 2 },
+  series: ["#4c8dff", "#7db4ff", "#8ec5ff", "#5fa8ff", "#3fd8c8", "#3ecf8e"],
 };
 
 function getTimeOfDay() {
@@ -147,7 +147,7 @@ export function DashboardClient({ data, user }: Props) {
         </div>
         <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
           <div
-            className="h-full rounded-full bg-indigo-500 transition-[width] duration-700 ease-out"
+            className="h-full rounded-full rt-gradient transition-[width] duration-700 ease-out"
             style={{ width: `${completion}%` }}
           />
         </div>
