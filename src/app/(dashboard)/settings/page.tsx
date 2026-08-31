@@ -8,6 +8,10 @@ import { Settings, Bell, Shield, Database, Save, Eye, EyeOff } from "lucide-reac
 import { useToast } from "@/components/ui/Toast";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { usePageTitle } from "@/lib/hooks";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { inputClass } from "@/components/ui/Input";
+import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   usePageTitle("Settings");
@@ -61,17 +65,14 @@ export default function SettingsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="text-sm text-gray-400 mt-1">Manage your workspace configuration</p>
-      </div>
+    <div className="max-w-2xl space-y-5">
+      <PageHeader title="Settings" description="Your profile and preferences" />
 
       {/* Profile */}
-      <section className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-          <Shield className="w-4 h-4 text-indigo-400" />
-          Your Profile
+      <section className="space-y-4 rounded-xl border border-gray-800 bg-gray-900 p-5">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+          <Shield className="h-4 w-4 text-gray-500" aria-hidden="true" />
+          Your profile
         </h2>
 
         {/* Avatar upload */}
@@ -98,7 +99,7 @@ export default function SettingsPage() {
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={inputClass}
             />
           </div>
           <div>
@@ -108,30 +109,26 @@ export default function SettingsPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+91 98765 43210"
-              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={inputClass}
             />
           </div>
-          <div className="flex justify-between items-center text-sm text-gray-400 pt-1">
-            <span>Email: <span className="text-white">{session?.user.email}</span></span>
-            <span>Role: <span className="text-indigo-400 capitalize">{session?.user.role?.replace(/_/g, " ")}</span></span>
+          <div className="flex items-center justify-between pt-1 text-sm text-gray-500">
+            <span>Email <span className="text-gray-300">{session?.user.email}</span></span>
+            <span>Role <span className="capitalize text-gray-300">{session?.user.role?.replace(/_/g, " ")}</span></span>
           </div>
         </div>
 
-        <button
-          onClick={() => saveProfile.mutate()}
-          disabled={saveProfile.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          <Save className="w-4 h-4" />
-          {saveProfile.isPending ? "Saving..." : "Save Profile"}
-        </button>
+        <Button size="sm" loading={saveProfile.isPending} onClick={() => saveProfile.mutate()}>
+          <Save className="h-3.5 w-3.5" />
+          Save profile
+        </Button>
       </section>
 
       {/* Password */}
-      <section className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-          <Settings className="w-4 h-4 text-indigo-400" />
-          Change Password
+      <section className="space-y-4 rounded-xl border border-gray-800 bg-gray-900 p-5">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+          <Settings className="h-4 w-4 text-gray-500" aria-hidden="true" />
+          Change password
         </h2>
         <div className="grid gap-3">
           <div>
@@ -140,7 +137,7 @@ export default function SettingsPage() {
               type={showPw ? "text" : "password"}
               value={currentPw}
               onChange={(e) => setCurrentPw(e.target.value)}
-              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={inputClass}
             />
           </div>
           <div className="relative">
@@ -149,7 +146,7 @@ export default function SettingsPage() {
               type={showPw ? "text" : "password"}
               value={newPw}
               onChange={(e) => setNewPw(e.target.value)}
-              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
+              className={cn(inputClass, "pr-10")}
             />
             <button
               type="button"
@@ -161,21 +158,23 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
-        <button
+        <Button
+          size="sm"
+          variant="secondary"
+          loading={changePassword.isPending}
+          disabled={!currentPw || !newPw}
           onClick={() => changePassword.mutate()}
-          disabled={!currentPw || !newPw || changePassword.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          <Save className="w-4 h-4" />
-          {changePassword.isPending ? "Updating..." : "Update Password"}
-        </button>
+          <Save className="h-3.5 w-3.5" />
+          Update password
+        </Button>
       </section>
 
       {/* Notifications */}
-      <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-          <Bell className="w-4 h-4 text-indigo-400" />
-          Notification Channels
+      <section className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+        <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+          <Bell className="h-4 w-4 text-gray-500" aria-hidden="true" />
+          Notification channels
         </h2>
         <div className="space-y-4">
           {[
@@ -196,9 +195,9 @@ export default function SettingsPage() {
       </section>
 
       {/* Integrations */}
-      <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-          <Database className="w-4 h-4 text-indigo-400" />
+      <section className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+        <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+          <Database className="h-4 w-4 text-gray-500" aria-hidden="true" />
           Integrations
         </h2>
         <div className="space-y-3">

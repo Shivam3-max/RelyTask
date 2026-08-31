@@ -5,13 +5,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { Plus, Mail, Phone, CheckSquare, Pencil, Power, Search, ChevronLeft, ChevronRight } from "lucide-react";
-
-const PAGE_SIZE = 9;
 import { useToast } from "@/components/ui/Toast";
 import { usePageTitle } from "@/lib/hooks";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { getAvatarColor } from "@/lib/constants";
 import { isAdminRole } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { Badge } from "@/components/ui/Badge";
+import { inputClass } from "@/components/ui/Input";
+
+const PAGE_SIZE = 9;
 
 type User = {
   id: string;
@@ -58,7 +64,7 @@ export default function TeamPage() {
       setForm({ name: "", email: "", password: "", phone: "", roleId: "" });
       toast("Team member added", "success");
     },
-    onError: () => toast("Failed to add member", "error"),
+    onError: () => toast("Couldn't add that member", "error"),
   });
 
   const updateUser = useMutation({
@@ -69,7 +75,7 @@ export default function TeamPage() {
       setEditUser(null);
       toast("Member updated", "success");
     },
-    onError: () => toast("Failed to update member", "error"),
+    onError: () => toast("Couldn't save changes", "error"),
   });
 
   const toggleActive = useMutation({
@@ -79,7 +85,7 @@ export default function TeamPage() {
       qc.invalidateQueries({ queryKey: ["users"] });
       toast(isActive ? "Member reactivated" : "Member deactivated", "success");
     },
-    onError: () => toast("Failed to update status", "error"),
+    onError: () => toast("Couldn't update status", "error"),
   });
 
   const filtered = useMemo(() => {
@@ -104,90 +110,88 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Team</h1>
-          <p className="text-sm text-gray-400 mt-1">
-            {filtered.length} of {users.length} members
-          </p>
+    <div className="space-y-5">
+      <PageHeader title="Team" description={`${filtered.length} of ${users.length}`}>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-600" aria-hidden="true" />
+          <input
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Search members…"
+            className="h-9 w-44 rounded-lg border border-gray-800 bg-gray-900 pl-8 pr-3 text-sm text-white placeholder:text-gray-600 focus:border-indigo-500 focus:outline-none md:w-56"
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-            <input
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search members…"
-              className="pl-9 pr-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-44 md:w-56"
-            />
-          </div>
-          {isAdmin && (
-            <button
-              onClick={() => setCreating(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Member
-            </button>
-          )}
-        </div>
-      </div>
+        {isAdmin && (
+          <Button size="sm" onClick={() => setCreating(true)}>
+            <Plus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Add member</span>
+          </Button>
+        )}
+      </PageHeader>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
         {visible.map((user) => (
-          <div key={user.id} className={`bg-gray-900 border rounded-xl p-5 ${user.isActive ? "border-gray-800" : "border-red-900/40 opacity-70"}`}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`w-10 h-10 rounded-full ${getAvatarColor(user.name)} flex items-center justify-center text-sm font-bold text-white shrink-0 overflow-hidden`}>
-                {user.avatar
-                  ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-                  : user.name.charAt(0).toUpperCase()
-                }
-              </div>
+          <div
+            key={user.id}
+            className={cn(
+              "rounded-xl border bg-gray-900 p-4",
+              user.isActive ? "border-gray-800" : "border-red-900/40 opacity-70"
+            )}
+          >
+            <div className="mb-3.5 flex items-center gap-3">
+              <span className={cn("grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full text-sm font-semibold text-white", getAvatarColor(user.name))}>
+                {user.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.avatar} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  user.name.charAt(0).toUpperCase()
+                )}
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-white truncate">{user.name}</h3>
-                  {!user.isActive && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">Inactive</span>
-                  )}
+                  <h3 className="truncate text-sm font-semibold text-white">{user.name}</h3>
+                  {!user.isActive && <Badge tone="danger">Inactive</Badge>}
                 </div>
-                <p className="text-xs text-indigo-400 capitalize">{user.role.name.replace(/_/g, " ")}</p>
+                <p className="text-xs capitalize text-gray-500">{user.role.name.replace(/_/g, " ")}</p>
               </div>
               {isAdmin && (
-                <div className="flex gap-1 shrink-0">
+                <div className="flex shrink-0 gap-0.5">
                   <button
                     type="button"
                     onClick={() => openEdit(user)}
                     aria-label={`Edit ${user.name}`}
-                    className="p-1.5 text-gray-600 hover:text-indigo-400 hover:bg-gray-800 rounded-lg transition-colors"
+                    className="rounded-md p-1.5 text-gray-600 transition-colors hover:bg-gray-800 hover:text-gray-200"
                   >
-                    <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+                    <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirmToggle(user)}
                     aria-label={user.isActive ? `Deactivate ${user.name}` : `Reactivate ${user.name}`}
-                    className={`p-1.5 hover:bg-gray-800 rounded-lg transition-colors ${user.isActive ? "text-gray-600 hover:text-red-400" : "text-gray-600 hover:text-green-400"}`}
+                    className={cn(
+                      "rounded-md p-1.5 text-gray-600 transition-colors hover:bg-gray-800",
+                      user.isActive ? "hover:text-red-400" : "hover:text-green-400"
+                    )}
                   >
-                    <Power className="w-3.5 h-3.5" aria-hidden="true" />
+                    <Power className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 </div>
               )}
             </div>
-            <div className="space-y-1.5 mb-4">
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <Mail className="w-3.5 h-3.5 shrink-0" />
+            <div className="space-y-1.5">
+              <p className="flex items-center gap-2 text-xs text-gray-400">
+                <Mail className="h-3.5 w-3.5 shrink-0 text-gray-600" aria-hidden="true" />
                 <span className="truncate">{user.email}</span>
-              </div>
+              </p>
               {user.phone && (
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <Phone className="w-3.5 h-3.5 shrink-0" />
+                <p className="flex items-center gap-2 text-xs text-gray-400">
+                  <Phone className="h-3.5 w-3.5 shrink-0 text-gray-600" aria-hidden="true" />
                   {user.phone}
-                </div>
+                </p>
               )}
             </div>
-            <div className="flex items-center gap-1.5 pt-3 border-t border-gray-800 text-xs text-gray-400">
-              <CheckSquare className="w-3.5 h-3.5" />
+            <div className="mt-3.5 flex items-center gap-1.5 border-t border-gray-800 pt-3 text-xs text-gray-500">
+              <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
               {user._count.assignedTasks} tasks assigned
             </div>
           </div>
@@ -195,192 +199,144 @@ export default function TeamPage() {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-gray-500">
-            Page {safePage} of {totalPages}
-          </p>
+        <div className="flex items-center justify-between pt-1">
+          <p className="text-xs text-gray-500 tabular-nums">Page {safePage} of {totalPages}</p>
           <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={safePage === 1}
-              aria-label="Previous page"
-              className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+            <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1} aria-label="Previous page" className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:opacity-30">
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </button>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safePage === totalPages}
-              aria-label="Next page"
-              className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" aria-hidden="true" />
+            <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} aria-label="Next page" className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:opacity-30">
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>
       )}
 
-      {/* Edit Modal */}
       {editUser && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="edit-member-title">
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md">
-            <div className="flex items-center justify-between p-6 border-b border-gray-800">
-              <h2 id="edit-member-title" className="text-lg font-semibold text-white">Edit {editUser.name}</h2>
-              <button type="button" onClick={() => setEditUser(null)} aria-label="Close" className="text-gray-400 hover:text-white">✕</button>
-            </div>
-            <div className="p-6 space-y-4">
-              {/* Avatar upload */}
-              <div className="flex items-center gap-4">
-                <ImageUpload
-                  currentUrl={editForm.avatar || null}
-                  uploadType="avatar"
-                  entityId={editUser.id}
-                  onUploaded={(url) => setEditForm({ ...editForm, avatar: url })}
-                  shape="circle"
-                  fallbackLabel={editUser.name}
-                />
-                <div>
-                  <p className="text-sm text-white font-medium">Profile Photo</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Click or drag to update</p>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Full Name</label>
-                <input
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">WhatsApp / Phone</label>
-                <input
-                  type="tel"
-                  value={editForm.phone}
-                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="+91 9000000000"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Role</label>
-                <select
-                  value={editForm.roleId}
-                  onChange={(e) => setEditForm({ ...editForm, roleId: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  {roles.map((r) => (
-                    <option key={r.id} value={r.id}>{r.name.replace(/_/g, " ")}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
-              <button onClick={() => setEditUser(null)} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
-              <button
+        <Modal
+          title={`Edit ${editUser.name}`}
+          onClose={() => setEditUser(null)}
+          footer={
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setEditUser(null)}>Cancel</Button>
+              <Button
+                size="sm"
+                loading={updateUser.isPending}
+                disabled={!editForm.name}
                 onClick={() => updateUser.mutate({ name: editForm.name, phone: editForm.phone, roleId: editForm.roleId, avatar: editForm.avatar || null })}
-                disabled={!editForm.name || updateUser.isPending}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                {updateUser.isPending ? "Saving..." : "Save Changes"}
-              </button>
+                Save changes
+              </Button>
+            </>
+          }
+        >
+          <div className="flex items-center gap-4">
+            <ImageUpload
+              currentUrl={editForm.avatar || null}
+              uploadType="avatar"
+              entityId={editUser.id}
+              onUploaded={(url) => setEditForm({ ...editForm, avatar: url })}
+              shape="circle"
+              fallbackLabel={editUser.name}
+            />
+            <div>
+              <p className="text-sm font-medium text-white">Profile photo</p>
+              <p className="mt-0.5 text-xs text-gray-500">Click or drag to update</p>
             </div>
           </div>
-        </div>
+          <div>
+            <label htmlFor="e-name" className="mb-1.5 block text-xs font-medium text-gray-400">Full name</label>
+            <input id="e-name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className={inputClass} />
+          </div>
+          <div>
+            <label htmlFor="e-phone" className="mb-1.5 block text-xs font-medium text-gray-400">WhatsApp / phone</label>
+            <input id="e-phone" type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className={inputClass} placeholder="+91 90000 00000" />
+          </div>
+          <div>
+            <label htmlFor="e-role" className="mb-1.5 block text-xs font-medium text-gray-400">Role</label>
+            <select id="e-role" value={editForm.roleId} onChange={(e) => setEditForm({ ...editForm, roleId: e.target.value })} className={inputClass}>
+              {roles.map((r) => <option key={r.id} value={r.id}>{r.name.replace(/_/g, " ")}</option>)}
+            </select>
+          </div>
+        </Modal>
       )}
 
-      {/* Deactivate/Reactivate confirmation */}
       {confirmToggle && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-toggle-title">
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-sm p-6">
-            <h2 id="confirm-toggle-title" className="text-base font-semibold text-white mb-2">
-              {confirmToggle.isActive ? "Deactivate" : "Reactivate"} {confirmToggle.name}?
-            </h2>
-            <p className="text-sm text-gray-400 mb-5">
-              {confirmToggle.isActive
-                ? "This will prevent the member from logging in."
-                : "This will restore the member's access."}
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmToggle(null)}
-                className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
+        <Modal
+          title={`${confirmToggle.isActive ? "Deactivate" : "Reactivate"} ${confirmToggle.name}?`}
+          onClose={() => setConfirmToggle(null)}
+          size="sm"
+          footer={
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setConfirmToggle(null)}>Cancel</Button>
+              <Button
+                size="sm"
+                variant={confirmToggle.isActive ? "danger" : "primary"}
+                loading={toggleActive.isPending}
                 onClick={() => {
                   toggleActive.mutate({ id: confirmToggle.id, isActive: !confirmToggle.isActive });
                   setConfirmToggle(null);
                 }}
-                disabled={toggleActive.isPending}
-                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 ${
-                  confirmToggle.isActive ? "bg-red-600 hover:bg-red-500" : "bg-green-600 hover:bg-green-500"
-                }`}
               >
                 {confirmToggle.isActive ? "Deactivate" : "Reactivate"}
-              </button>
-            </div>
-          </div>
-        </div>
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm text-gray-400">
+            {confirmToggle.isActive
+              ? "They won't be able to sign in until reactivated."
+              : "This restores their access to the workspace."}
+          </p>
+        </Modal>
       )}
 
-      {/* Add Member Modal */}
       {creating && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="add-member-title">
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md">
-            <div className="flex items-center justify-between p-6 border-b border-gray-800">
-              <h2 id="add-member-title" className="text-lg font-semibold text-white">Add Team Member</h2>
-              <button type="button" onClick={() => setCreating(false)} aria-label="Close" className="text-gray-400 hover:text-white">✕</button>
-            </div>
-            <div className="p-6 space-y-4">
-              {[
-                { key: "name", label: "Full Name *", placeholder: "Name", type: "text" },
-                { key: "email", label: "Email *", placeholder: "email@agency.com", type: "email" },
-                { key: "password", label: "Password *", placeholder: "Temp password", type: "password" },
-                { key: "phone", label: "WhatsApp Number", placeholder: "+91 9000000000", type: "tel" },
-              ].map(({ key, label, placeholder, type }) => (
-                <div key={key}>
-                  <label className="block text-xs text-gray-400 mb-1.5">{label}</label>
-                  <input
-                    type={type}
-                    value={form[key as keyof typeof form]}
-                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder={placeholder}
-                  />
-                </div>
-              ))}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Role *</label>
-                <select
-                  value={form.roleId}
-                  onChange={(e) => setForm({ ...form, roleId: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">Select role</option>
-                  {roles.map((r) => (
-                    <option key={r.id} value={r.id}>{r.name.replace(/_/g, " ")}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
-              <button onClick={() => setCreating(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
-              <button
+        <Modal
+          title="Add team member"
+          onClose={() => setCreating(false)}
+          footer={
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setCreating(false)}>Cancel</Button>
+              <Button
+                size="sm"
+                loading={create.isPending}
+                disabled={!form.name || !form.email || !form.password || !form.roleId}
                 onClick={() => create.mutate(form)}
-                disabled={!form.name || !form.email || !form.password || !form.roleId || create.isPending}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                {create.isPending ? "Adding..." : "Add Member"}
-              </button>
+                Add member
+              </Button>
+            </>
+          }
+        >
+          {[
+            { key: "name", label: "Full name", placeholder: "Name", type: "text" },
+            { key: "email", label: "Email", placeholder: "name@company.com", type: "email" },
+            { key: "password", label: "Temporary password", placeholder: "They'll change it on first login", type: "password" },
+            { key: "phone", label: "WhatsApp number", placeholder: "+91 90000 00000", type: "tel" },
+          ].map(({ key, label, placeholder, type }) => (
+            <div key={key}>
+              <label htmlFor={`n-${key}`} className="mb-1.5 block text-xs font-medium text-gray-400">
+                {label} {key !== "phone" && <span className="text-gray-600">*</span>}
+              </label>
+              <input
+                id={`n-${key}`}
+                type={type}
+                value={form[key as keyof typeof form]}
+                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                className={inputClass}
+                placeholder={placeholder}
+              />
             </div>
+          ))}
+          <div>
+            <label htmlFor="n-role" className="mb-1.5 block text-xs font-medium text-gray-400">Role <span className="text-gray-600">*</span></label>
+            <select id="n-role" value={form.roleId} onChange={(e) => setForm({ ...form, roleId: e.target.value })} className={inputClass}>
+              <option value="">Select role</option>
+              {roles.map((r) => <option key={r.id} value={r.id}>{r.name.replace(/_/g, " ")}</option>)}
+            </select>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

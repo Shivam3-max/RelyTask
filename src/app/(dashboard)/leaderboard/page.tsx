@@ -5,6 +5,7 @@ import axios from "axios";
 import { Trophy, Target, CheckCircle, Clock, Zap } from "lucide-react";
 import { usePageTitle } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 type Leader = {
   id: string;
@@ -37,18 +38,12 @@ export default function LeaderboardPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
-          <Trophy className="w-6 h-6 text-yellow-400" aria-hidden="true" />
-          Performance Leaderboard
-        </h1>
-        <p className="text-sm text-gray-400 mt-1">Team ranking based on tasks completed in the last 30 days</p>
-      </div>
+    <div className="space-y-5">
+      <PageHeader title="Leaderboard" description="Team ranking — tasks completed in the last 30 days" />
 
       {isError && (
-        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
-          Failed to load leaderboard — try refreshing.
+        <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          Couldn&apos;t load the leaderboard. Try refreshing.
         </p>
       )}
 
@@ -136,10 +131,10 @@ export default function LeaderboardPage() {
                 </div>
 
                 {/* Name + role */}
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-white">{leader.name}</p>
-                  <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium capitalize",
-                    ROLE_COLOR[leader.role] ?? "text-gray-400 bg-gray-700"
+                  <span className={cn("mt-0.5 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium capitalize",
+                    ROLE_COLOR[leader.role] ?? "bg-gray-800 text-gray-400"
                   )}>
                     {leader.role.replace(/_/g, " ")}
                   </span>
@@ -164,14 +159,11 @@ export default function LeaderboardPage() {
                 </div>
 
                 {/* Progress bar */}
-                <div className="hidden md:block w-24">
-                  <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
-                      style={{ width: `${completion}%` }}
-                    />
+                <div className="hidden w-24 md:block">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-gray-800">
+                    <div className="h-full rounded-full bg-indigo-500" style={{ width: `${completion}%` }} />
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-0.5 text-right">{completion}% done</p>
+                  <p className="mt-0.5 text-right text-[10px] text-gray-500 tabular-nums">{completion}% done</p>
                 </div>
 
                 {/* Score */}
