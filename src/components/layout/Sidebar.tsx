@@ -68,9 +68,12 @@ function SidebarContent({ pathname, session, isAdmin, canViewAllTasks, onNavClic
     <div className="flex flex-col h-full bg-gray-900">
       {/* Wordmark */}
       <div className="flex items-center justify-between px-4 h-14 shrink-0 border-b border-gray-800">
-        <Link href="/dashboard" onClick={onNavClick} className="flex items-center">
+        <Link href="/dashboard" onClick={onNavClick} className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/Logo.png" alt="RELYTASK" className="h-7 w-auto" />
+          <img src="/Logo.png" alt="" className="h-7 w-auto" />
+          <span className="text-[15px] font-semibold tracking-tight text-white">
+            <span className="text-gray-500">SOP</span> RELYTASK
+          </span>
         </Link>
         <button
           onClick={onNavClick}
@@ -170,9 +173,12 @@ export function Sidebar() {
     <>
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-14 bg-gray-900 border-b border-gray-800">
-        <Link href="/dashboard" className="flex items-center">
+        <Link href="/dashboard" className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/Logo.png" alt="RELYTASK" className="h-6 w-auto" />
+          <img src="/Logo.png" alt="" className="h-6 w-auto" />
+          <span className="text-sm font-semibold tracking-tight text-white">
+            <span className="text-gray-500">SOP</span> RELYTASK
+          </span>
         </Link>
         <div className="flex items-center gap-1">
           <NotificationBell />
