@@ -154,6 +154,23 @@ subdomain (often automatic). Visit `https://app.yourdomain.com` and log in with
 as part of the build (see §7). Nothing manual needed for routine schema changes,
 as long as you committed the generated migration in `prisma/migrations/`.
 
+**Generate migrations against a case-sensitive MySQL.** Hostinger's Linux MySQL
+treats `Task` and `task` as different tables; Windows/macOS MySQL does not. A
+migration created on Windows can emit lower-cased table names that then fail on
+deploy with `error 1146 ... doesn't exist`. Run `prisma migrate dev` against a
+Linux MySQL (Docker: `mysql:8`) — or hand-fix the table names in the generated
+`.sql` to match the PascalCase model names — before committing.
+
+If a migration half-applied and the deploy is now stuck (`P3018`), fix the
+`.sql`, then over SSH (with the DB_* vars exported):
+
+```bash
+npx prisma migrate resolve --rolled-back <failed_migration_name>
+```
+
+and redeploy. If the database has no real data yet, `npx prisma migrate reset
+--force --skip-seed` is simpler — it drops everything and replays all migrations.
+
 ## Backups
 
 The Business plan includes **automated daily backups** (files + databases, 7-day
