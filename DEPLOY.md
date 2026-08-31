@@ -52,8 +52,11 @@ applies new migrations and re-runs the seed**. Both steps are non-destructive
 ## 5. Environment variables (app dashboard → Environment variables)
 
 ```
-DATABASE_URL         = mysql://DBUSER:DBPASS@localhost:3306/DBNAME
-DIRECT_URL           = mysql://DBUSER:DBPASS@localhost:3306/DBNAME
+DB_HOST              = localhost
+DB_PORT              = 3306
+DB_USER              = <mysql user from step 2>
+DB_PASSWORD          = <mysql password from step 2>
+DB_NAME              = <mysql database from step 2>
 NEXTAUTH_SECRET      = <openssl rand -base64 32>
 NEXTAUTH_URL         = https://app.yourdomain.com
 NEXT_PUBLIC_APP_URL  = https://app.yourdomain.com
@@ -69,6 +72,9 @@ SEED_TEMP_PASSWORD   = <temp password for the initial team members>
 # TWILIO_* left unset → WhatsApp notifications disabled
 ```
 
+`src/lib/db-url.ts` builds the Prisma connection URL from `DB_*`. (Set a full
+`DATABASE_URL` instead only if you want to override the parts.)
+
 `NEXTAUTH_URL` / `NEXT_PUBLIC_APP_URL` **must** be the public `https://` subdomain
 URL or login breaks.
 
@@ -82,7 +88,8 @@ URL or login breaks.
 Fix it once, over SSH, before the first GitHub deploy:
 
 ```bash
-# point the CLI at the production DB
+# point the CLI at the production DB (the app's env vars may not be present in
+# an SSH shell — set them, or export a one-off DATABASE_URL)
 export DATABASE_URL='mysql://DBUSER:DBPASS@localhost:3306/DBNAME'
 
 npx prisma migrate status          # see what it thinks is applied

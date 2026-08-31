@@ -1,4 +1,5 @@
 import "dotenv/config";
+import "../src/lib/db-url"; // assembles DATABASE_URL from the DB_* vars
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 

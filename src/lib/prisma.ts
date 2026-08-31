@@ -1,3 +1,4 @@
+import "./db-url"; // assembles DATABASE_URL from DB_* vars before the client reads it
 import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };

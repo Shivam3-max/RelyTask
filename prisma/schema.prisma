@@ -3,9 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider  = "mysql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "mysql"
+  // DATABASE_URL is assembled from the DB_* env vars by src/lib/db-url.ts.
+  url      = env("DATABASE_URL")
 }
 
 // ─── ROLES & PERMISSIONS ────────────────────────────────────────────────────
